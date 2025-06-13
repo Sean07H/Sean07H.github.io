@@ -41,9 +41,11 @@
             outline: 2px solid #3b82f6;
             outline-offset: 2px;
         }
+        .calendar-day span { display: block; }
+        .calendar-day .pages-text { font-size: 0.75rem; color: inherit; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
-            .calendar-day br { display: none; }
+            .calendar-day .pages-text { font-size: 0.6rem; }
             .calendar-day .undo-btn { font-size: 0.6rem; padding: 0.25rem 0.5rem; }
         }
     </style>
@@ -100,7 +102,7 @@
             <p class="text-sm">Focus Area: <span id="focusArea">None</span></p>
             <div class="mt-2">
                 <h4 class="text-sm font-semibold">Recent Tests:</h4>
-                <ul id="testLog" class="text-sm list-disc pl-5"></ul>
+                <ul id="testLog" class="text-sm space-y-2"></ul>
             </div>
         </div>
         <footer class="text-center mt-auto">
@@ -203,7 +205,8 @@
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
                     <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''}" data-date="${date.toDateString()}" role="button" tabindex="${isBeforeStart ? '-1' : '0'}" aria-label="Day ${day}, ${pages} pages planned${isCompleted ? ', completed' : ''}${isCurrent ? ', today' : ''}${isSelected ? ', selected' : ''}">
-                        ${day}<br>${pages} pages
+                        <span>${day}</span>
+                        ${!isBeforeStart ? `<span class="pages-text">${pages} pages</span>` : ''}
                         ${isCompleted ? `<br><button class="undo-btn mt-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700" data-date="${date.toDateString()}" aria-label="Undo entry for ${date.toDateString()}">Undo</button>` : ''}
                     </div>`;
             }
@@ -214,6 +217,7 @@
             updateTestLog();
             attachDayListeners();
             attachUndoListeners();
+            attachTestDeleteListeners();
         }
 
         function updatePlan() {
@@ -248,9 +252,21 @@
 
         function updateTestLog() {
             const testLogEl = document.getElementById('testLog');
-            testLogEl.innerHTML = testLog.slice(-3).map(test => {
+            testLogEl.innerHTML = testLog.slice(-3).map((test, index) => {
                 const date = new Date(test.date).toLocaleDateString();
-                return `<li>${date}: Math ${test.math}, Reading ${test.reading}, Writing ${test.writing} (Total: ${test.math + test.reading + test.writing})</li>`;
+                const total = test.math + test.reading + test.writing;
+                return `
+                    <li class="border-b border-gray-300 dark:border-gray-600 py-2">
+                        <div class="flex justify-between items-center">
+                            <span>Test on ${date} (Total: ${total})</span>
+                            <button class="delete-test-btn text-xs bg-red-600 text-white px-2 py-1 rounded hover:bg-red-700" data-index="${testLog.length - 1 - index}" aria-label="Delete test from ${date}">Delete</button>
+                        </div>
+                        <ul class="pl-4 text-xs">
+                            <li>Math: ${test.math}</li>
+                            <li>Reading: ${test.reading}</li>
+                            <li>Writing: ${test.writing}</li>
+                        </ul>
+                    </li>`;
             }).join('');
             const latestTest = testLog[testLog.length - 1];
             if (latestTest) {
@@ -260,6 +276,17 @@
             } else {
                 document.getElementById('focusArea').textContent = 'None';
             }
+        }
+
+        function attachTestDeleteListeners() {
+            document.querySelectorAll('.delete-test-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const index = parseInt(btn.dataset.index);
+                    testLog.splice(index, 1);
+                    updateTestLog();
+                    saveState();
+                });
+            });
         }
 
         function recalculatePlan() {
