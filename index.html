@@ -47,10 +47,50 @@
         .dark .bg-gray-100 { background: #000000; }
         .dark .bg-white { background: #1f2937; } /* Darker calendar background */
         .dark .text-gray-900 { color: #f3f4f6; }
+        .nav-bar {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+            z-index: 50;
+        }
+        .dark .nav-bar { background: rgba(31, 41, 55, 0.5); }
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #6b7280;
+            font-size: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .nav-item.active {
+            background: rgba(59, 130, 246, 0.2);
+            color: #3b82f6;
+        }
+        .nav-item:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: #f3f4f6;
+        }
+        .dark .nav-item { color: #9ca3af; }
+        .dark .nav-item.active { color: #3b82f6; }
+        .dark .nav-item:hover:not(.active) { color: #f3f4f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
             .calendar-day .pages-text { font-size: 0.6rem; }
             .calendar-day .undo-btn { font-size: 0.6rem; padding: 0.25rem 0.5rem; }
+            .nav-bar { padding: 0.5rem; }
+            .nav-item { font-size: 0.6rem; padding: 0.25rem; }
         }
     </style>
 </head>
@@ -59,57 +99,104 @@
         <header class="text-center mb-6 sticky top-0 z-10 glass p-4 rounded-lg">
             <img src="sat-logo.png" alt="SAT Study Planner Logo" class="w-32 mx-auto mb-2" loading="lazy">
             <h1 class="text-2xl font-bold">SAT Study Planner</h1>
-            <button id="toggleDarkMode" class="mt-2 text-sm text-gray-600 dark:text-gray-400 hover:underline" aria-label="Toggle dark mode">Toggle Dark Mode</button>
         </header>
-        <div class="flex justify-between mb-4 flex-wrap gap-2">
-            <button id="prevMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Previous Month" aria-label="Previous Month">← Prev</button>
-            <button id="todayBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Jump to Today" aria-label="Jump to Today">Today</button>
-            <button id="nextMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Next Month" aria-label="Next Month">Next →</button>
-        </div>
-        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg mb-6 overflow-y-auto max-h-[60vh] animate-slide-in">
-            <h2 id="monthYear" class="text-center text-lg font-semibold mb-4"></h2>
-            <div id="calendar" class="grid grid-cols-7 gap-2"></div>
-        </div>
-        <div class="input-section glass p-4 rounded-lg shadow-lg mb-6 animate-slide-in">
-            <h3 id="inputLabel" class="text-lg font-semibold mb-2"></h3>
-            <div class="flex mb-4">
-                <input type="number" id="pagesInput" min="0" placeholder="Pages studied" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="Enter pages studied">
-                <button id="submitPages" class="bg-blue-600 text-white px-4 rounded-r-lg hover:bg-blue-700 transition" aria-label="Submit pages">Submit</button>
+
+        <!-- Log Tab -->
+        <div id="logTab" class="tab-content active animate-slide-in">
+            <div class="flex justify-between mb-4 flex-wrap gap-2">
+                <button id="prevMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Previous Month" aria-label="Previous Month">← Prev</button>
+                <button id="todayBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Jump to Today" aria-label="Jump to Today">Today</button>
+                <button id="nextMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Next Month" aria-label="Next Month">Next →</button>
             </div>
-            <button id="undoLast" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Undo last entry">Undo Last Entry</button>
-            <div class="mt-4 flex items-center">
-                <label class="mr-2">Enable Adaptive Plan:</label>
-                <input type="checkbox" id="adaptiveMode" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" aria-label="Enable adaptive study plan">
+            <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg mb-6 overflow-y-auto max-h-[50vh]">
+                <h2 id="monthYear" class="text-center text-lg font-semibold mb-4"></h2>
+                <div id="calendar" class="grid grid-cols-7 gap-2"></div>
             </div>
-            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
-                <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
-                <p>Progress: <span id="progressPercent">0%</span></p>
-                <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
-                <p>Estimated Completion: <span id="completionDate">N/A</span> <span id="completionWarning" class="text-red-500 hidden">⚠ Falling behind!</span></p>
-            </div>
-            <p class="mt-2">Current Plan: <span id="currentPlan"></span></p>
-            <div class="mt-4">
-                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
-                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+            <div class="input-section glass p-4 rounded-lg shadow-lg mb-6">
+                <h3 id="inputLabel" class="text-lg font-semibold mb-2"></h3>
+                <div class="flex mb-4">
+                    <input type="number" id="pagesInput" min="0" placeholder="Pages studied" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="Enter pages studied">
+                    <button id="submitPages" class="bg-blue-600 text-white px-4 rounded-r-lg hover:bg-blue-700 transition" aria-label="Submit pages">Submit</button>
+                </div>
+                <button id="undoLast" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Undo last entry">Undo Last Entry</button>
+                <div class="mt-4 flex items-center">
+                    <label class="mr-2">Enable Adaptive Plan:</label>
+                    <input type="checkbox" id="adaptiveMode" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" aria-label="Enable adaptive study plan">
+                </div>
+                <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
+                    <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
+                    <p>Progress: <span id="progressPercent">0%</span></p>
+                    <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
+                    <p>Estimated Completion: <span id="completionDate">N/A</span> <span id="completionWarning" class="text-red-500 hidden">⚠ Falling behind!</span></p>
+                </div>
+                <p class="mt-2">Current Plan: <span id="currentPlan"></span></p>
+                <div class="mt-4">
+                    <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                        <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                    </div>
                 </div>
             </div>
         </div>
-        <div class="test-section glass p-4 rounded-lg shadow-lg mb-6 animate-slide-in">
-            <h3 class="text-lg font-semibold mb-2">Practice Test Scores</h3>
-            <div class="flex flex-wrap gap-2 mb-4">
-                <input type="number" id="mathScore" min="200" max="800" placeholder="Math (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Math score">
-                <input type="number" id="readingScore" min="200" max="800" placeholder="Reading (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Reading score">
-                <input type="number" id="writingScore" min="200" max="800" placeholder="Writing (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Writing score">
-                <button id="submitTest" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" aria-label="Submit test scores">Submit Test</button>
-            </div>
-            <p class="text-sm">Focus Area: <span id="focusArea">None</span></p>
-            <div class="mt-2">
-                <h4 class="text-sm font-semibold">Recent Tests:</h4>
-                <ul id="testLog" class="text-sm space-y-2"></ul>
+
+        <!-- Tests Tab -->
+        <div id="testsTab" class="tab-content animate-slide-in">
+            <div class="test-section glass p-4 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-2">Practice Test Scores</h3>
+                <div class="flex flex-wrap gap-2 mb-4">
+                    <input type="number" id="mathScore" min="200" max="800" placeholder="Math (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Math score">
+                    <input type="number" id="readingScore" min="200" max="800" placeholder="Reading (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Reading score">
+                    <input type="number" id="writingScore" min="200" max="800" placeholder="Writing (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Writing score">
+                    <button id="submitTest" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" aria-label="Submit test scores">Submit Test</button>
+                </div>
+                <p class="text-sm">Focus Area: <span id="focusArea">None</span></p>
+                <div class="mt-2">
+                    <h4 class="text-sm font-semibold">Recent Tests:</h4>
+                    <ul id="testLog" class="text-sm space-y-2"></ul>
+                </div>
             </div>
         </div>
-        <footer class="text-center mt-auto">
+
+        <!-- Settings Tab -->
+        <div id="settingsTab" class="tab-content animate-slide-in">
+            <div class="settings-section glass p-4 rounded-lg shadow-lg">
+                <h3 class="text-lg font-semibold mb-2">Settings</h3>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Theme</label>
+                    <button id="toggleDarkMode" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition" aria-label="Toggle dark mode">Toggle Dark Mode</button>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Font Size</label>
+                    <select id="fontSizeSelect" class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Select font size">
+                        <option value="small">Small</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="large">Large</option>
+                    </select>
+                </div>
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-1">Reset Progress</label>
+                    <button id="resetProgress" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Reset all progress">Reset All Progress</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Navigation Bar -->
+        <nav class="nav-bar">
+            <button id="logNav" class="nav-item active" data-tab="logTab" aria-label="Log tab">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                Log
+            </button>
+            <button id="testsNav" class="nav-item" data-tab="testsTab" aria-label="Tests tab">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                Tests
+            </button>
+            <button id="settingsNav" class="nav-item" data-tab="settingsTab" aria-label="Settings tab">
+                <svg class="w-5 h-5 mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+                Settings
+            </button>
+        </nav>
+
+        <footer class="text-center mt-20">
             <p class="text-gray-600 dark:text-gray-400">Goal: 763 pages by March 31, 2026</p>
         </footer>
     </div>
@@ -160,6 +247,12 @@
                 if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
                     document.documentElement.classList.add('dark');
                 }
+
+                const savedFontSize = localStorage.getItem('fontSize');
+                if (savedFontSize) {
+                    document.getElementById('fontSizeSelect').value = savedFontSize;
+                    updateFontSize(savedFontSize);
+                }
             } catch (e) {
                 console.error('Failed to load state:', e);
                 alert('Error loading your progress. Resetting to defaults.');
@@ -178,6 +271,7 @@
             localStorage.setItem('satCurrentDate', currentDate.toISOString());
             localStorage.setItem('satAdaptiveMode', adaptiveMode);
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            localStorage.setItem('fontSize', document.getElementById('fontSizeSelect').value);
         }
 
         function renderCalendar() {
@@ -215,7 +309,6 @@
                     </div>`;
             }
             document.getElementById('inputLabel').textContent = `Log Pages for ${selectedDate.toLocaleDateString()}`;
-            // Removed document.getElementById('pagesInput').focus();
             updatePlan();
             updateStats();
             updateTestLog();
@@ -382,6 +475,53 @@
             });
         }
 
+        // Tab Navigation
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+            saveState();
+        }
+
+        document.querySelectorAll('.nav-item').forEach(item => {
+            item.addEventListener('click', () => {
+                switchTab(item.dataset.tab);
+            });
+        });
+
+        // Settings Handlers
+        function updateFontSize(size) {
+            const fontSizes = { small: '0.875rem', medium: '1rem', large: '1.125rem' };
+            document.documentElement.style.fontSize = fontSizes[size];
+            saveState();
+        }
+
+        document.getElementById('fontSizeSelect').addEventListener('change', () => {
+            updateFontSize(document.getElementById('fontSizeSelect').value);
+        });
+
+        document.getElementById('toggleDarkMode').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            saveState();
+        });
+
+        document.getElementById('resetProgress').addEventListener('click', () => {
+            if (confirm('Are you sure you want to reset all progress? This action cannot be undone.')) {
+                totalPages = 0;
+                pagesRemaining = 763;
+                progress = {};
+                entryLog = [];
+                testLog = [];
+                studyPlan = { summerPages: 8, schoolPages: 1, weekendPages: 3 };
+                adaptiveMode = false;
+                document.getElementById('adaptiveMode').checked = false;
+                localStorage.clear();
+                recalculatePlan();
+                updateTestLog();
+            }
+        });
+
         document.getElementById('submitPages').addEventListener('click', () => {
             const pages = parseInt(document.getElementById('pagesInput').value) || 0;
             if (pages < 0) {
@@ -456,12 +596,6 @@
         document.getElementById('adaptiveMode').addEventListener('change', () => {
             adaptiveMode = document.getElementById('adaptiveMode').checked;
             recalculatePlan();
-            saveState();
-        });
-
-        // Dark mode toggle
-        document.getElementById('toggleDarkMode').addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
             saveState();
         });
 
