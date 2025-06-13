@@ -6,6 +6,7 @@
     <title>SAT Study Planner</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     <style>
         body { font-family: 'Inter', sans-serif; }
         .calendar-day { transition: all 0.2s ease; }
@@ -43,11 +44,10 @@
         }
         .calendar-day span { display: block; }
         .calendar-day .pages-text { font-size: 0.75rem; color: inherit; }
-        .dark { background: #000000; } /* Black background for dark mode */
+        .dark { background: #000000; }
         .dark .bg-gray-100 { background: #000000; }
-        .dark .bg-white { background: #1f2937; } /* Darker calendar background */
+        .dark .bg-white { background: #1f2937; }
         .dark .text-gray-900 { color: #f3f4f6; }
-        /* Navigation Bar */
         .nav-bar {
             position: fixed;
             bottom: 20px;
@@ -85,10 +85,8 @@
         .dark .nav-item { color: #9ca3af; }
         .dark .nav-item.active { color: #3b82f6; }
         .dark .nav-item:hover:not(.active) { color: #f3f4f6; }
-        /* Tab Content */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
-        /* iOS Settings Style */
         .settings-section { max-width: 600px; margin: 0 auto; }
         .settings-group { margin-bottom: 1.5rem; }
         .settings-group h4 { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; padding-left: 1rem; text-transform: uppercase; }
@@ -132,6 +130,7 @@
             text-align: right;
         }
         .dark .settings-item select, .dark .settings-item button { color: #60a5fa; }
+        .chart-container { position: relative; height: 200px; margin-bottom: 1rem; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
             .calendar-day .pages-text { font-size: 0.6rem; }
@@ -140,6 +139,7 @@
             .nav-item { font-size: 0.65rem; padding: 0.25rem 0.75rem; }
             .settings-item { font-size: 0.875rem; padding: 0.75rem; }
             .settings-item .icon { width: 20px; height: 20px; }
+            .chart-container { height: 150px; }
         }
     </style>
 </head>
@@ -172,9 +172,12 @@
                     <label class="mr-2">Enable Adaptive Plan:</label>
                     <input type="checkbox" id="adaptiveMode" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" aria-label="Enable adaptive study plan">
                 </div>
+                <div class="mt-4">
+                    <canvas id="progressChart" class="chart-container"></canvas>
+                </div>
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
-                    <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
+                    <p>Pages Remaining: <span id="pagesRemaining">763</p>
                     <p>Progress: <span id="progressPercent">0%</span></p>
                     <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
                     <p>Estimated Completion: <span id="completionDate">N/A</span> <span id="completionWarning" class="text-red-500 hidden">⚠ Falling behind!</span></p>
@@ -199,6 +202,9 @@
                     <button id="submitTest" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" aria-label="Submit test scores">Submit Test</button>
                 </div>
                 <p class="text-sm">Focus Area: <span id="focusArea">None</span></p>
+                <div class="mt-4">
+                    <canvas id="scoreChart" class="chart-container"></canvas>
+                </div>
                 <div class="mt-2">
                     <h4 class="text-sm font-semibold">Recent Tests:</h4>
                     <ul id="testLog" class="text-sm space-y-2"></ul>
@@ -296,6 +302,20 @@
                         </div>
                         <div class="toggle" id="highlightPeriodsToggle" role="switch" aria-checked="false"></div>
                     </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <span>Show Progress Chart</span>
+                        </div>
+                        <div class="toggle" id="showProgressChartToggle" role="switch" aria-checked="true"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+                            <span>Show Score Chart</span>
+                        </div>
+                        <div class="toggle" id="showScoreChartToggle" role="switch" aria-checked="true"></div>
+                    </div>
                 </div>
                 <!-- Data Management -->
                 <div class="settings-group">
@@ -359,8 +379,12 @@
             reminders: false,
             reminderTime: '20',
             showCompleted: true,
-            highlightPeriods: false
+            highlightPeriods: false,
+            showProgressChart: true,
+            showScoreChart: true
         };
+        let progressChart = null;
+        let scoreChart = null;
 
         // Load state from localStorage
         function loadState() {
@@ -415,6 +439,10 @@
                     document.getElementById('showCompletedToggle').setAttribute('aria-checked', settings.showCompleted);
                     document.getElementById('highlightPeriodsToggle').classList.toggle('on', settings.highlightPeriods);
                     document.getElementById('highlightPeriodsToggle').setAttribute('aria-checked', settings.highlightPeriods);
+                    document.getElementById('showProgressChartToggle').classList.toggle('on', settings.showProgressChart);
+                    document.getElementById('showProgressChartToggle').setAttribute('aria-checked', settings.showProgressChart);
+                    document.getElementById('showScoreChartToggle').classList.toggle('on', settings.showScoreChart);
+                    document.getElementById('showScoreChartToggle').setAttribute('aria-checked', settings.showScoreChart);
                 }
             } catch (e) {
                 console.error('Failed to load state:', e);
@@ -463,6 +491,135 @@
             }
         }
 
+        // Render Progress Chart
+        function renderProgressChart() {
+            const ctx = document.getElementById('progressChart').getContext('2d');
+            const last30Days = Array(30).fill(0);
+            const labels = [];
+            const today = new Date();
+            for (let i = 29; i >= 0; i--) {
+                const date = new Date(today);
+                date.setDate(today.getDate() - i);
+                labels.push(date.toLocaleDateString('default', { month: 'short', day: 'numeric' }));
+                const dateStr = date.toDateString();
+                const pages = entryLog.filter(e => e.date === dateStr).reduce((sum, e) => sum + e.pages, 0);
+                last30Days[29 - i] = pages;
+            }
+            if (progressChart) progressChart.destroy();
+            if (!settings.showProgressChart) {
+                ctx.canvas.style.display = 'none';
+                return;
+            }
+            ctx.canvas.style.display = 'block';
+
+            ```chartjs
+            {
+                "type": "line",
+                "data": {
+                    "labels": labels,
+                    "datasets": [{
+                        "label": "Pages Studied",
+                        "data": last30Days,
+                        "borderColor": "#3b82f6",
+                        "backgroundColor": "rgba(59, 130, 246, 0.2)",
+                        "fill": true,
+                        "tension": 0.4
+                    }]
+                },
+                "options": {
+                    "responsive": true,
+                    "maintainAspectRatio": false,
+                    "scales": {
+                        "y": {
+                            "beginAtZero": true,
+                            "title": { "display": true, "text": "Pages" },
+                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        },
+                        "x": {
+                            "title": { "display": true, "text": "Date" },
+                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        }
+                    },
+                    "plugins": {
+                        "legend": { "display": true, "position": "top" }
+                    }
+                }
+            }
+            ```
+
+            progressChart = new Chart(ctx, chartConfig);
+        }
+
+        // Render Score Chart
+        function renderScoreChart() {
+            const ctx = document.getElementById('scoreChart').getContext('2d');
+            const sortedTests = testLog.slice().sort((a, b) => new Date(a.date) - new Date(b.date));
+            const labels = sortedTests.map(t => new Date(t.date).toLocaleDateString());
+            const mathScores = sortedTests.map(t => t.math);
+            const readingScores = sortedTests.map(t => t.reading);
+            const writingScores = sortedTests.map(t => t.writing);
+            if (scoreChart) scoreChart.destroy();
+            if (!settings.showScoreChart || sortedTests.length === 0) {
+                ctx.canvas.style.display = 'none';
+                return;
+            }
+            ctx.canvas.style.display = 'block';
+
+            ```chartjs-complete
+            {
+                "type": "line",
+                "data": {
+                    "labels": labels,
+                    "datasets": [
+                        {
+                            "label": "Math",
+                            "data": mathScores,
+                            "borderColor": "#ef4444",
+                            "backgroundColor": "rgba(239, 68, 68, 0.2)",
+                            "fill": false
+                        },
+                        {
+                            "label": "Reading",
+                            "data": readingScores,
+                            "borderColor": "#10b981",
+                            "backgroundColor": "rgba(16, 185, 129, 0.2)",
+                            "fill": false
+                        },
+                        {
+                            "label": "Writing",
+                            "data": writingScores,
+                            "borderColor": "#f59e0b",
+                            "backgroundColor": "rgba(245, 158, 11, 0.2)",
+                            "fill": false
+                        }
+                    ]
+                },
+                "options": {
+                    "responsive": true,
+                    "maintainAspectRatio": false,
+                    "scales": {
+                        "y": {
+                            "beginAtZero": false,
+                            "min": 200,
+                            "max": 800,
+                            "title": { "display": true, "text": "Score" },
+                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        },
+                        "x": {
+                            "title": { "display": true, "text": "Test Date" },
+                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        }
+                    },
+                    "plugins": {
+                        "legend": { "display": true, "position": "top" }
+                    }
+                }
+            }
+            ```
+
+            scoreChart = new Chart(ctx, chartConfig);
+        }
+
         function renderCalendar() {
             const calendar = document.getElementById('calendar');
             const monthYear = document.getElementById('monthYear');
@@ -483,14 +640,14 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const isBeforeStart = date < new Date(2025, 5, 13); // June 13, 2025
-                const isSummer = date >= new Date(2025, 5, 13) && date < new Date(2025, 7, 13); // June 13 to August 12, 2025
+                const isBeforeStart = date < new Date(2025, 5, 13);
+                const isSummer = date >= new Date(2025, 5, 13) && date < new Date(2025, 7, 13);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
                 const isCurrent = date.toDateString() === new Date().toDateString();
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
-                if (!settings.showCompleted && isCompleted) return;
+                if (!settings.showCompleted && isCompleted) continue;
                 const highlightClass = settings.highlightPeriods && isSummer ? 'bg-yellow-100 dark:bg-yellow-900' : '';
                 calendar.innerHTML += `
                     <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''} ${highlightClass}" data-date="${date.toDateString()}" role="button" tabindex="${isBeforeStart ? '-1' : '0'}" aria-label="Day ${day}, ${pages} pages planned${isCompleted ? ', completed' : ''}${isCurrent ? ', today' : ''}${isSelected ? ', selected' : ''}">
@@ -503,6 +660,8 @@
             updatePlan();
             updateStats();
             updateTestLog();
+            renderProgressChart();
+            renderScoreChart();
             attachDayListeners();
             attachUndoListeners();
             attachTestDeleteListeners();
@@ -523,8 +682,7 @@
             const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
             document.getElementById('avgPages').textContent = avgPages.toFixed(1);
 
-            // Goal Forecasting
-            const targetDate = new Date(2026, 2, 31); // March 31, 2026
+            const targetDate = new Date(2026, 2, 31);
             let completionDate = 'N/A';
             let showWarning = false;
             if (avgPages > 0) {
@@ -564,6 +722,7 @@
             } else {
                 document.getElementById('focusArea').textContent = 'None';
             }
+            renderScoreChart();
         }
 
         function attachTestDeleteListeners() {
@@ -579,11 +738,10 @@
 
         function recalculatePlan() {
             const today = new Date();
-            const startDate = new Date(2025, 5, 13); // June 13, 2025
-            const summerEnd = new Date(2025, 7, 13); // August 13, 2025
-            const endDate = new Date(2026, 2, 31); // March 31, 2026
+            const startDate = new Date(2025, 5, 13);
+            const summerEnd = new Date(2025, 7, 13);
+            const endDate = new Date(2026, 2, 31);
 
-            // Calculate summer days (June 13 to August 12, 2025)
             let summerDays = 0;
             if (today >= startDate && today < summerEnd) {
                 summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
@@ -591,10 +749,9 @@
                 summerDays = Math.ceil((summerEnd - startDate) / (1000 * 60 * 60 * 24));
             }
 
-            // Calculate school and weekend days from August 13, 2025, to March 31, 2026
             const schoolStart = today < summerEnd ? summerEnd : today;
             const remainingDays = Math.ceil((endDate - schoolStart) / (1000 * 60 * 60 * 24));
-            const schoolDays = Math.round(remainingDays * 5 / 7); // Approximate weekdays
+            const schoolDays = Math.round(remainingDays * 5 / 7);
             const weekendDays = remainingDays - schoolDays;
 
             if (pagesRemaining <= 0) {
@@ -602,30 +759,25 @@
                 return;
             }
 
-            // Set base plan
-            studyPlan.summerPages = 8;
-            studyPlan.schoolPages = 1;
-            studyPlan.weekendPages = 3;
+            let baseSummerPages = studyPlan.summerPages;
+            let baseSchoolPages = studyPlan.schoolPages;
+            let baseWeekendPages = studyPlan.weekendPages;
 
-            // Apply adaptive mode adjustments
-            let performanceFactor = 1;
             if (adaptiveMode) {
                 const daysWithEntries = Object.keys(progress).length;
                 const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
-                const expectedAvg = (studyPlan.summerPages + studyPlan.schoolPages + studyPlan.weekendPages) / 3;
-                performanceFactor = avgPages > 0 ? Math.min(Math.max(avgPages / expectedAvg, 0.8), 1.2) : 1;
-                studyPlan.summerPages = Math.round(studyPlan.summerPages * performanceFactor);
-                studyPlan.schoolPages = Math.max(1, Math.round(studyPlan.schoolPages * performanceFactor));
-                studyPlan.weekendPages = Math.max(3, Math.round(studyPlan.weekendPages * performanceFactor));
+                const expectedAvg = (baseSummerPages + baseSchoolPages + baseWeekendPages) / 3;
+                const performanceFactor = avgPages > 0 ? Math.min(Math.max(avgPages / expectedAvg, 0.8), 1.2) : 1;
+                studyPlan.summerPages = Math.round(baseSummerPages * performanceFactor);
+                studyPlan.schoolPages = Math.max(1, Math.round(baseSchoolPages * performanceFactor));
+                studyPlan.weekendPages = Math.max(3, Math.round(baseWeekendPages * performanceFactor));
             }
 
-            // Calculate total pages from current plan
             const totalSummerPages = summerDays * studyPlan.summerPages;
             const totalSchoolPages = schoolDays * studyPlan.schoolPages;
             const totalWeekendPages = weekendDays * studyPlan.weekendPages;
             let extraPages = pagesRemaining - (totalSummerPages + totalSchoolPages + totalWeekendPages);
 
-            // Distribute extra pages if needed
             if (extraPages > 0) {
                 const extraPerDay = Math.ceil(extraPages / (summerDays + weekendDays));
                 studyPlan.summerPages = summerDays > 0 ? studyPlan.summerPages + extraPerDay : studyPlan.summerPages;
@@ -744,6 +896,22 @@
             document.getElementById('highlightPeriodsToggle').classList.toggle('on', settings.highlightPeriods);
             document.getElementById('highlightPeriodsToggle').setAttribute('aria-checked', settings.highlightPeriods);
             renderCalendar();
+            saveState();
+        });
+
+        document.getElementById('showProgressChartToggle').addEventListener('click', () => {
+            settings.showProgressChart = !settings.showProgressChart;
+            document.getElementById('showProgressChartToggle').classList.toggle('on', settings.showProgressChart);
+            document.getElementById('showProgressChartToggle').setAttribute('aria-checked', settings.showProgressChart);
+            renderProgressChart();
+            saveState();
+        });
+
+        document.getElementById('showScoreChartToggle').addEventListener('click', () => {
+            settings.showScoreChart = !settings.showScoreChart;
+            document.getElementById('showScoreChartToggle').classList.toggle('on', settings.showScoreChart);
+            document.getElementById('showScoreChartToggle').setAttribute('aria-checked', settings.showScoreChart);
+            renderScoreChart();
             saveState();
         });
 
