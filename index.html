@@ -8,45 +8,39 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background: #f8f9fa; font-size: 16px; }
-        .calendar-day { padding: 10px; border: 1px solid #ddd; min-height: 60px; text-align: center; }
+        .calendar-day { padding: 5px; border: 1px solid #ddd; min-height: 60px; text-align: center; font-size: 0.9rem; }
         .current-day { background: #007bff; color: white; }
         .completed-day { background: #28a745; color: white; }
-        .week-view { margin: 20px 0; }
-        .week-view li { font-size: 1.1rem; padding: 10px; }
+        .disabled-day { background: #e9ecef; color: #6c757d; }
         .input-section { margin: 20px 0; }
         .input-section input, .input-section button { font-size: 1.2rem; padding: 10px; height: 48px; }
         .nav-btn { font-size: 1.2rem; padding: 10px 20px; }
-        .month-view { display: none; }
+        .undo-btn { font-size: 0.8rem; padding: 2px 5px; }
+        .calendar-container { overflow-y: auto; max-height: 70vh; }
         @media (min-width: 768px) {
-            .month-view { display: block; }
-            .calendar-day { min-height: 100px; }
+            .calendar-day { min-height: 80px; font-size: 1rem; }
         }
-        .swipe-container { overflow-x: auto; white-space: nowrap; }
     </style>
 </head>
 <body>
     <div class="container py-3">
         <h1 class="h3 text-center my-3">SAT Study Planner</h1>
         <div class="d-flex justify-content-between mb-3">
-            <button id="prevWeek" class="btn btn-outline-primary nav-btn">← Prev</button>
+            <button id="prevMonth" class="btn btn-outline-primary nav-btn">← Prev</button>
             <button id="todayBtn" class="btn btn-outline-primary nav-btn">Today</button>
-            <button id="nextWeek" class="btn btn-outline-primary nav-btn">Next →</button>
+            <button id="nextMonth" class="btn btn-outline-primary nav-btn">Next →</button>
         </div>
-        <button id="toggleView" class="btn btn-secondary mb-3 w-100">Show Monthly Calendar</button>
-        <div id="monthView" class="month-view">
+        <div class="calendar-container">
             <h2 id="monthYear" class="text-center"></h2>
             <div id="calendar" class="row row-cols-7 g-1"></div>
-        </div>
-        <div class="week-view swipe-container">
-            <h3 id="weekRange" class="text-center"></h3>
-            <ul id="weekList" class="list-group"></ul>
         </div>
         <div class="input-section">
             <h3>Log Pages Studied</h3>
             <div class="input-group mb-3">
-                <input type="number" id="pagesInput" class="form-control" placeholder="Pages today" min="0">
+                <input type="number" id="pagesInput" class="form-control" placeholder="Pages today" min="0" autofocus>
                 <button id="submitPages" class="btn btn-primary">Submit</button>
             </div>
+            <button id="undoLast" class="btn btn-outline-danger mb-3">Undo Last Entry</button>
             <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
             <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
             <p>Current Plan: <span id="currentPlan"></span></p>
@@ -61,6 +55,7 @@
         let pagesRemaining = 763;
         let studyPlan = { summerPages: 8, schoolPages: 1, weekendPages: 3 };
         let progress = JSON.parse(localStorage.getItem('satProgress')) || {};
+        let entryLog = JSON.parse(localStorage.getItem('satEntryLog')) || []; // Track entries for undo
 
         function renderCalendar() {
             const calendar = document.getElementById('calendar');
@@ -70,6 +65,12 @@
             const month = currentDate.getMonth();
             monthYear.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
 
+            // Weekday headers
+            const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+            daysOfWeek.forEach(day => {
+                calendar.innerHTML += `<div class="col calendar-day fw-bold">${day}</div>`;
+            });
+
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             for (let i = 0; i < firstDay; i++) {
@@ -77,62 +78,39 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                if (date < new Date(2025, 5, 13)) continue; // Start from June 13
+                const isBeforeStart = date < new Date(2025, 5, 13);
                 const isSummer = date < new Date(2025, 7, 13);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const pages = isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
+                const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
                 const isCurrent = date.toDateString() === new Date(2025, 5, 12).toDateString();
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
-                    <div class="col calendar-day ${isCurrent ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''}">
+                    <div class="col calendar-day ${isCurrent ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''} ${isBeforeStart ? 'disabled-day' : ''}">
                         ${day}<br>${pages} pages
+                        ${isCompleted ? `<br><button class="btn btn-outline-light btn-sm undo-btn" data-date="${date.toDateString()}">Undo</button>` : ''}
                     </div>`;
             }
-            renderWeek();
             updatePlan();
-        }
-
-        function renderWeek() {
-            const weekList = document.getElementById('weekList');
-            const weekRange = document.getElementById('weekRange');
-            weekList.innerHTML = '';
-            const startOfWeek = new Date(currentDate);
-            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay());
-            const endOfWeek = new Date(startOfWeek);
-            endOfWeek.setDate(startOfWeek.getDate() + 6);
-            weekRange.textContent = `${startOfWeek.toLocaleDateString()} - ${endOfWeek.toLocaleDateString()}`;
-            for (let i = 0; i < 7; i++) {
-                const date = new Date(startOfWeek);
-                date.setDate(startOfWeek.getDate() + i);
-                if (date < new Date(2025, 5, 13)) continue;
-                const isSummer = date < new Date(2025, 7, 13);
-                const isWeekend = date.getDay() === 0 || date.getDay() === 6;
-                const pages = isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
-                const isCompleted = progress[date.toDateString()];
-                weekList.innerHTML += `
-                    <li class="list-group-item ${isCompleted ? 'completed-day' : ''}">
-                        ${date.toLocaleDateString()}: Study ${pages} pages
-                    </li>`;
-            }
+            attachUndoListeners();
         }
 
         function updatePlan() {
             document.getElementById('totalPages').textContent = totalPages;
             document.getElementById('pagesRemaining').textContent = pagesRemaining;
-            document.getElementById('currentPlan').textContent = `Summer: ${studyPlan.summerPages} pages/day, School: 1 pageabulary page/day, Weekends: ${studyPlan.weekendPages} pages/day`;
+            document.getElementById('currentPlan').textContent = `Summer: ${studyPlan.summerPages} pages/day, School: 1 page/day, Weekends: ${studyPlan.weekendPages} pages/day`;
             localStorage.setItem('satProgress', JSON.stringify(progress));
+            localStorage.setItem('satEntryLog', JSON.stringify(entryLog));
         }
 
         function recalculatePlan() {
             const today = new Date(currentDate);
             const summerEnd = new Date(2025, 7, 12);
             const endDate = new Date(2025, 2, 3);
-            let remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
             let summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
             let schoolDays = 143, weekendDays = 58;
             if (today >= summerEnd) {
                 summerDays = 0;
-                remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+                const remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
                 schoolDays = Math.round(remainingDays * 5 / 7);
                 weekendDays = remainingDays - schoolDays;
             }
@@ -147,6 +125,20 @@
             renderCalendar();
         }
 
+        function attachUndoListeners() {
+            document.querySelectorAll('.undo-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const date = btn.dataset.date;
+                    const pages = progress[date] || 0;
+                    totalPages -= pages;
+                    pagesRemaining = Math.min(763, 763 - totalPages);
+                    delete progress[date];
+                    entryLog = entryLog.filter(entry => entry.date !== date);
+                    recalculatePlan();
+                });
+            });
+        }
+
         document.getElementById('submitPages').addEventListener('click', () => {
             const pages = parseInt(document.getElementById('pagesInput').value) || 0;
             if (pages < 0) {
@@ -155,17 +147,33 @@
             }
             totalPages += pages;
             pagesRemaining = Math.max(0, 763 - totalPages);
-            progress[new Date(2025, 5, 12).toDateString()] = pages; // Simulate today
+            const today = new Date(2025, 5, 12).toDateString(); // Simulate today
+            progress[today] = (progress[today] || 0) + pages;
+            entryLog.push({ date: today, pages });
+            document.getElementById('pagesInput').value = '';
             recalculatePlan();
         });
 
-        document.getElementById('prevWeek').addEventListener('click', () => {
-            currentDate.setDate(currentDate.getDate() - 7);
+        document.getElementById('undoLast').addEventListener('click', () => {
+            if (entryLog.length === 0) {
+                alert('No entries to undo.');
+                return;
+            }
+            const lastEntry = entryLog.pop();
+            totalPages -= lastEntry.pages;
+            pagesRemaining = Math.min(763, 763 - totalPages);
+            progress[lastEntry.date] = (progress[lastEntry.date] || 0) - lastEntry.pages;
+            if (progress[lastEntry.date] <= 0) delete progress[lastEntry.date];
+            recalculatePlan();
+        });
+
+        document.getElementById('prevMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() - 1);
             renderCalendar();
         });
 
-        document.getElementById('nextWeek').addEventListener('click', () => {
-            currentDate.setDate(currentDate.getDate() + 7);
+        document.getElementById('nextMonth').addEventListener('click', () => {
+            currentDate.setMonth(currentDate.getMonth() + 1);
             renderCalendar();
         });
 
@@ -174,23 +182,15 @@
             renderCalendar();
         });
 
-        document.getElementById('toggleView').addEventListener('click', () => {
-            const monthView = document.getElementById('monthView');
-            const isMonthView = monthView.style.display === 'block';
-            monthView.style.display = isMonthView ? 'none' : 'block';
-            document.getElementById('toggleView').textContent = isMonthView ? 'Show Monthly Calendar' : 'Show Weekly List';
-            renderCalendar();
-        });
-
         // Swipe support
         let touchStartX = 0;
-        document.querySelector('.swipe-container').addEventListener('touchstart', e => {
+        document.querySelector('.calendar-container').addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
         });
-        document.querySelector('.swipe-container').addEventListener('touchend', e => {
+        document.querySelector('.calendar-container').addEventListener('touchend', e => {
             const touchEndX = e.changedTouches[0].screenX;
-            if (touchEndX < touchStartX - 50) document.getElementById('nextWeek').click();
-            if (touchEndX > touchStartX + 50) document.getElementById('prevWeek').click();
+            if (touchEndX < touchStartX - 50) document.getElementById('nextMonth').click();
+            if (touchEndX > touchStartX + 50) document.getElementById('prevMonth').click();
         });
 
         renderCalendar();
