@@ -4,57 +4,78 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SAT Study Planner</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Roboto', sans-serif; background: #f8f9fa; font-size: 16px; }
-        .calendar-day { padding: 5px; border: 1px solid #ddd; min-height: 70px; text-align: center; font-size: 0.9rem; cursor: pointer; }
-        .current-day { background: #007bff; color: white; }
-        .completed-day { background: #28a745; color: white; }
-        .selected-day { border: 2px solid #ffc107 !important; }
-        .disabled-day { background: #e9ecef; color: #6c757d; pointer-events: none; }
-        .input-section { margin: 20px 0; }
-        .input-section input, .input-section button { font-size: 1.2rem; padding: 10px; height: 48px; }
-        .nav-btn { font-size: 1.2rem; padding: 10px 20px; }
-        .undo-btn { font-size: 0.8rem; padding: 5px; min-width: 40px; }
-        .calendar-container { overflow-y: auto; max-height: 70vh; }
-        .logo-img { max-width: 150px; height: auto; display: block; margin: 10px auto; }
-        @media (min-width: 768px) {
-            .calendar-day { min-height: 90px; font-size: 1rem; }
-            .logo-img { max-width: 200px; }
+        body { font-family: 'Inter', sans-serif; }
+        .calendar-day { transition: all 0.2s ease; }
+        .calendar-day:hover:not(.disabled-day):not(.header-day) { transform: scale(1.05); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
+        .dark .calendar-day.completed-day { background: #22c55e; position: relative; }
+        .dark .calendar-day.current-day { background: #3b82f6; }
+        .dark .calendar-day.selected-day { border-color: #facc15 !important; }
+        .dark .disabled-day { background: #374151; color: #9ca3af; }
+        .completed-day::after {
+            content: '✔';
+            position: absolute;
+            top: 2px; right: 4px;
+            font-size: 0.75rem;
+            color: white;
         }
+        .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
+        .dark .glass { background: rgba(31, 41, 55, 0.3); }
+        .animate-slide-in { animation: slideIn 0.3s ease-out; }
+        @keyframes slideIn {
+            from { transform: translateY(20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .tooltip { position: relative; }
+        .tooltip:hover::after {
+            content: attr(data-tooltip);
+            position: absolute;
+            bottom: 100%; left: 50%; transform: translateX(-50%);
+            background: #1f2937; color: white; padding: 4px 8px;
+            border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
+            z-index: 10;
+        }
+        button:focus { outline: none; ring: 2px solid #3b82f6; }
     </style>
 </head>
-<body>
-    <div class="container py-3">
-        <header class="text-center my-3">
-            <img src="sat-logo.png" alt="SAT Study Planner Logo" class="logo-img">
-            <h1 class="h3">SAT Study Planner</h1>
+<body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
+    <div class="container mx-auto p-4 flex-grow">
+        <header class="text-center mb-6 sticky top-0 z-10 glass p-4 rounded-lg">
+            <img src="sat-logo.png" alt="SAT Study Planner Logo" class="w-32 mx-auto mb-2">
+            <h1 class="text-2xl font-bold">SAT Study Planner</h1>
+            <button id="toggleDarkMode" class="mt-2 text-sm text-gray-600 dark:text-gray-400 hover:underline" aria-label="Toggle dark mode">Toggle Dark Mode</button>
         </header>
-        <div class="d-flex justify-content-between mb-3">
-            <button id="prevMonth" class="btn btn-outline-primary nav-btn">← Prev</button>
-            <button id="todayBtn" class="btn btn-outline-primary nav-btn">Today</button>
-            <button id="nextMonth" class="btn btn-outline-primary nav-btn">Next →</button>
+        <div class="flex justify-between mb-4 flex-wrap gap-2">
+            <button id="prevMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Previous Month" aria-label="Previous Month">← Prev</button>
+            <button id="todayBtn" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Jump to Today" aria-label="Jump to Today">Today</button>
+            <button id="nextMonth" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition tooltip" data-tooltip="Next Month" aria-label="Next Month">Next →</button>
         </div>
-        <div class="calendar-container">
-            <h2 id="monthYear" class="text-center"></h2>
-            <div id="calendar" class="row row-cols-7 g-1"></div>
+        <div class="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg mb-6 overflow-y-auto max-h-[60vh] animate-slide-in">
+            <h2 id="monthYear" class="text-center text-lg font-semibold mb-4"></h2>
+            <div id="calendar" class="grid grid-cols-7 gap-2"></div>
         </div>
-        <div class="input-section">
-            <h3 id="inputLabel">Log Pages Studied</h3>
-            <div class="input-group mb-3">
-                <input type="number" id="pagesInput" class="form-control" placeholder="Pages" min="0" autofocus>
-                <button id="submitPages" class="btn btn-primary">Submit</button>
+        <div class="input-section glass p-4 rounded-lg shadow-lg mb-6 animate-slide-in">
+            <h3 id="inputLabel" class="text-lg font-semibold mb-2"></h3>
+            <div class="flex mb-4">
+                <input type="number" id="pagesInput" min="0" placeholder="Pages studied" class="flex-grow p-2 border rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600" aria-label="Enter pages studied">
+                <button id="submitPages" class="bg-blue-600 text-white px-4 rounded-r-lg hover:bg-blue-700 transition" aria-label="Submit pages">Submit</button>
             </div>
-            <button id="undoLast" class="btn btn-outline-danger mb-3">Undo Last Entry</button>
-            <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
-            <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
-            <p>Current Plan: <span id="currentPlan"></span></p>
+            <button id="undoLast" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Undo last entry">Undo Last Entry</button>
+            <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
+                <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
+                <p>Progress: <span id="progressPercent">0%</span></p>
+                <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
+            </div>
+            <p class="mt-2">Current Plan: <span id="currentPlan"></span></p>
         </div>
-        <footer class="text-center mt-4">
-            <p>Goal: 763 pages by March 3, 2025</p>
+        <footer class="text-center mt-auto">
+            <p class="text-gray-600 dark:text-gray-400">Goal: 763 pages by March 31, 2025</p>
         </footer>
     </div>
+
     <script>
         let currentDate = new Date(2025, 5, 12); // June 12, 2025
         let selectedDate = new Date(2025, 5, 12);
@@ -74,13 +95,13 @@
 
             const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             daysOfWeek.forEach(day => {
-                calendar.innerHTML += `<div class="col calendar-day fw-bold">${day}</div>`;
+                calendar.innerHTML += `<div class="calendar-day text-center p-2 bg-gray-200 dark:bg-gray-600 font-semibold rounded header-day">${day}</div>`;
             });
 
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
             for (let i = 0; i < firstDay; i++) {
-                calendar.innerHTML += '<div class="col calendar-day"></div>';
+                calendar.innerHTML += '<div class="calendar-day"></div>';
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
@@ -92,13 +113,15 @@
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
-                    <div class="col calendar-day ${isCurrent ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''} ${isSelected ? 'selected-day' : ''} ${isBeforeStart ? 'disabled-day' : ''}" data-date="${date.toDateString()}">
+                    <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''}" data-date="${date.toDateString()}" role="button" tabindex="0" aria-label="Day ${day}, ${pages} pages${isCompleted ? ', completed' : ''}">
                         ${day}<br>${pages} pages
-                        ${isCompleted ? `<br><button class="btn btn-outline-light btn-sm undo-btn" data-date="${date.toDateString()}">Undo</button>` : ''}
+                        ${isCompleted ? `<br><button class="undo-btn mt-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700" data-date="${date.toDateString()}" aria-label="Undo entry for ${date.toDateString()}">Undo</button>` : ''}
                     </div>`;
             }
             document.getElementById('inputLabel').textContent = `Log Pages for ${selectedDate.toLocaleDateString()}`;
+            document.getElementById('pagesInput').focus();
             updatePlan();
+            updateStats();
             attachDayListeners();
             attachUndoListeners();
         }
@@ -106,15 +129,23 @@
         function updatePlan() {
             document.getElementById('totalPages').textContent = totalPages;
             document.getElementById('pagesRemaining').textContent = pagesRemaining;
-            document.getElementById('currentPlan').textContent = `Summer: ${studyPlan.summerPages} pages/day, School: 1 page/day, Weekends: ${studyPlan.weekendPages} pages/day`;
+            document.getElementById('currentPlan').textContent = `Summer: ${studyPlan.summerPages} pages/day, School: ${studyPlan.schoolPages} page/day, Weekends: ${studyPlan.weekendPages} pages/day`;
             localStorage.setItem('satProgress', JSON.stringify(progress));
             localStorage.setItem('satEntryLog', JSON.stringify(entryLog));
+        }
+
+        function updateStats() {
+            const progressPercent = ((totalPages / 763) * 100).toFixed(1);
+            document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            const daysWithEntries = Object.keys(progress).length;
+            const avgPages = daysWithEntries > 0 ? (totalPages / daysWithEntries).toFixed(1) : 0;
+            document.getElementById('avgPages').textContent = avgPages;
         }
 
         function recalculatePlan() {
             const today = new Date(currentDate);
             const summerEnd = new Date(2025, 7, 12);
-            const endDate = new Date(2025, 2, 3);
+            const endDate = new Date(2025, 2, 31);
             let summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
             let schoolDays = 143, weekendDays = 58;
             if (today >= summerEnd) {
@@ -135,10 +166,17 @@
         }
 
         function attachDayListeners() {
-            document.querySelectorAll('.calendar-day:not(.disabled-day):not(.fw-bold)').forEach(day => {
+            document.querySelectorAll('.calendar-day:not(.disabled-day):not(.header-day)').forEach(day => {
                 day.addEventListener('click', () => {
                     selectedDate = new Date(day.dataset.date);
                     renderCalendar();
+                });
+                day.addEventListener('keydown', e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectedDate = new Date(day.dataset.date);
+                        renderCalendar();
+                    }
                 });
             });
         }
@@ -196,23 +234,34 @@
         });
 
         document.getElementById('todayBtn').addEventListener('click', () => {
-            currentDate = new Date(2025, 5, 12);
+            currentDate = new Date(2025, 5, 12); // Update to new Date() for production
             selectedDate = new Date(2025, 5, 12);
             renderCalendar();
         });
 
+        // Swipe navigation
         let touchStartX = 0;
-        document.querySelector('.calendar-container').addEventListener('touchstart', e => {
+        const calendarContainer = document.querySelector('.bg-white.dark\\:bg-gray-800');
+        calendarContainer.addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
         });
-        document.querySelector('.calendar-container').addEventListener('touchend', e => {
+        calendarContainer.addEventListener('touchend', e => {
             const touchEndX = e.changedTouches[0].screenX;
-            if (touchEndX < touchStartX - 50) document.getElementById('nextMonth').click();
-            if (touchEndX > touchStartX + 50) document.getElementById('prevMonth').click();
+            if (touchEndX < touchStartX - 30) document.getElementById('nextMonth').click();
+            if (touchEndX > touchStartX + 30) document.getElementById('prevMonth').click();
         });
 
+        // Dark mode toggle
+        document.getElementById('toggleDarkMode').addEventListener('click', () => {
+            document.documentElement.classList.toggle('dark');
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+            document.documentElement.classList.add('dark');
+        }
+
+        // Initialize
         renderCalendar();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
