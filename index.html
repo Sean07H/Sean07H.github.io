@@ -77,13 +77,55 @@
     </div>
 
     <script>
-        let currentDate = new Date(2025, 5, 12); // June 12, 2025
-        let selectedDate = new Date(2025, 5, 12);
+        // Initialize state
+        let currentDate = new Date();
+        let selectedDate = new Date();
         let totalPages = 0;
         let pagesRemaining = 763;
         let studyPlan = { summerPages: 8, schoolPages: 1, weekendPages: 3 };
-        let progress = JSON.parse(localStorage.getItem('satProgress')) || {};
-        let entryLog = JSON.parse(localStorage.getItem('satEntryLog')) || [];
+        let progress = {};
+        let entryLog = [];
+
+        // Load state from localStorage
+        function loadState() {
+            const savedProgress = localStorage.getItem('satProgress');
+            if (savedProgress) progress = JSON.parse(savedProgress);
+
+            const savedEntryLog = localStorage.getItem('satEntryLog');
+            if (savedEntryLog) entryLog = JSON.parse(savedEntryLog);
+
+            const savedStudyPlan = localStorage.getItem('satStudyPlan');
+            if (savedStudyPlan) studyPlan = JSON.parse(savedStudyPlan);
+
+            const savedTotalPages = localStorage.getItem('satTotalPages');
+            if (savedTotalPages) totalPages = parseInt(savedTotalPages);
+
+            const savedPagesRemaining = localStorage.getItem('satPagesRemaining');
+            if (savedPagesRemaining) pagesRemaining = parseInt(savedPagesRemaining);
+
+            const savedSelectedDate = localStorage.getItem('satSelectedDate');
+            if (savedSelectedDate) selectedDate = new Date(savedSelectedDate);
+
+            const savedCurrentDate = localStorage.getItem('satCurrentDate');
+            if (savedCurrentDate) currentDate = new Date(savedCurrentDate);
+
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                document.documentElement.classList.add('dark');
+            }
+        }
+
+        // Save state to localStorage
+        function saveState() {
+            localStorage.setItem('satProgress', JSON.stringify(progress));
+            localStorage.setItem('satEntryLog', JSON.stringify(entryLog));
+            localStorage.setItem('satStudyPlan', JSON.stringify(studyPlan));
+            localStorage.setItem('satTotalPages', totalPages);
+            localStorage.setItem('satPagesRemaining', pagesRemaining);
+            localStorage.setItem('satSelectedDate', selectedDate.toISOString());
+            localStorage.setItem('satCurrentDate', currentDate.toISOString());
+            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+        }
 
         function renderCalendar() {
             const calendar = document.getElementById('calendar');
@@ -105,11 +147,11 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const isBeforeStart = date < new Date(2025, 5, 13);
-                const isSummer = date < new Date(2025, 7, 13);
+                const isBeforeStart = date < new Date(2024, 5, 13); // Adjust start date as needed
+                const isSummer = date < new Date(2024, 7, 13);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
-                const isCurrent = date.toDateString() === currentDate.toDateString();
+                const isCurrent = date.toDateString() === new Date().toDateString();
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
@@ -130,8 +172,7 @@
             document.getElementById('totalPages').textContent = totalPages;
             document.getElementById('pagesRemaining').textContent = pagesRemaining;
             document.getElementById('currentPlan').textContent = `Summer: ${studyPlan.summerPages} pages/day, School: ${studyPlan.schoolPages} page/day, Weekends: ${studyPlan.weekendPages} pages/day`;
-            localStorage.setItem('satProgress', JSON.stringify(progress));
-            localStorage.setItem('satEntryLog', JSON.stringify(entryLog));
+            saveState();
         }
 
         function updateStats() {
@@ -143,8 +184,8 @@
         }
 
         function recalculatePlan() {
-            const today = new Date(currentDate);
-            const summerEnd = new Date(2025, 7, 12);
+            const today = new Date();
+            const summerEnd = new Date(2024, 7, 12); // Adjust as needed
             const endDate = new Date(2025, 2, 31);
             let summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
             let schoolDays = 143, weekendDays = 58;
@@ -225,17 +266,31 @@
 
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
+            // Adjust selectedDate to a valid day in the new month
+            const daysInNewMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            if (selectedDate.getDate() > daysInNewMonth) {
+                selectedDate.setDate(daysInNewMonth);
+            }
+            selectedDate.setMonth(currentDate.getMonth());
+            selectedDate.setFullYear(currentDate.getFullYear());
             renderCalendar();
         });
 
         document.getElementById('nextMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
+            // Adjust selectedDate to a valid day in the new month
+            const daysInNewMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
+            if (selectedDate.getDate() > daysInNewMonth) {
+                selectedDate.setDate(daysInNewMonth);
+            }
+            selectedDate.setMonth(currentDate.getMonth());
+            selectedDate.setFullYear(currentDate.getFullYear());
             renderCalendar();
         });
 
         document.getElementById('todayBtn').addEventListener('click', () => {
-            currentDate = new Date(2025, 5, 12); // Update to new Date() for production
-            selectedDate = new Date(2025, 5, 12);
+            currentDate = new Date();
+            selectedDate = new Date();
             renderCalendar();
         });
 
@@ -254,13 +309,11 @@
         // Dark mode toggle
         document.getElementById('toggleDarkMode').addEventListener('click', () => {
             document.documentElement.classList.toggle('dark');
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+            saveState();
         });
-        if (localStorage.getItem('theme') === 'dark' || (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-            document.documentElement.classList.add('dark');
-        }
 
         // Initialize
+        loadState();
         renderCalendar();
     </script>
 </body>
