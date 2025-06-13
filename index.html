@@ -8,17 +8,18 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Roboto', sans-serif; background: #f8f9fa; font-size: 16px; }
-        .calendar-day { padding: 5px; border: 1px solid #ddd; min-height: 60px; text-align: center; font-size: 0.9rem; }
+        .calendar-day { padding: 5px; border: 1px solid #ddd; min-height: 70px; text-align: center; font-size: 0.9rem; cursor: pointer; }
         .current-day { background: #007bff; color: white; }
         .completed-day { background: #28a745; color: white; }
-        .disabled-day { background: #e9ecef; color: #6c757d; }
+        .selected-day { border: 2px solid #ffc107 !important; }
+        .disabled-day { background: #e9ecef; color: #6c757d; pointer-events: none; }
         .input-section { margin: 20px 0; }
         .input-section input, .input-section button { font-size: 1.2rem; padding: 10px; height: 48px; }
         .nav-btn { font-size: 1.2rem; padding: 10px 20px; }
-        .undo-btn { font-size: 0.8rem; padding: 2px 5px; }
+        .undo-btn { font-size: 0.8rem; padding: 5px; min-width: 40px; }
         .calendar-container { overflow-y: auto; max-height: 70vh; }
         @media (min-width: 768px) {
-            .calendar-day { min-height: 80px; font-size: 1rem; }
+            .calendar-day { min-height: 90px; font-size: 1rem; }
         }
     </style>
 </head>
@@ -35,9 +36,9 @@
             <div id="calendar" class="row row-cols-7 g-1"></div>
         </div>
         <div class="input-section">
-            <h3>Log Pages Studied</h3>
+            <h3 id="inputLabel">Log Pages Studied</h3>
             <div class="input-group mb-3">
-                <input type="number" id="pagesInput" class="form-control" placeholder="Pages today" min="0" autofocus>
+                <input type="number" id="pagesInput" class="form-control" placeholder="Pages" min="0" autofocus>
                 <button id="submitPages" class="btn btn-primary">Submit</button>
             </div>
             <button id="undoLast" class="btn btn-outline-danger mb-3">Undo Last Entry</button>
@@ -51,11 +52,12 @@
     </div>
     <script>
         let currentDate = new Date(2025, 5, 12); // June 12, 2025
+        let selectedDate = new Date(2025, 5, 12);
         let totalPages = 0;
         let pagesRemaining = 763;
         let studyPlan = { summerPages: 8, schoolPages: 1, weekendPages: 3 };
         let progress = JSON.parse(localStorage.getItem('satProgress')) || {};
-        let entryLog = JSON.parse(localStorage.getItem('satEntryLog')) || []; // Track entries for undo
+        let entryLog = JSON.parse(localStorage.getItem('satEntryLog')) || [];
 
         function renderCalendar() {
             const calendar = document.getElementById('calendar');
@@ -82,15 +84,18 @@
                 const isSummer = date < new Date(2025, 7, 13);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
-                const isCurrent = date.toDateString() === new Date(2025, 5, 12).toDateString();
+                const isCurrent = date.toDateString() === currentDate.toDateString();
+                const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
-                    <div class="col calendar-day ${isCurrent ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''} ${isBeforeStart ? 'disabled-day' : ''}">
+                    <div class="col calendar-day ${isCurrent ? 'current-day' : ''} ${isCompleted ? 'completed-day' : ''} ${isSelected ? 'selected-day' : ''} ${isBeforeStart ? 'disabled-day' : ''}" data-date="${date.toDateString()}">
                         ${day}<br>${pages} pages
                         ${isCompleted ? `<br><button class="btn btn-outline-light btn-sm undo-btn" data-date="${date.toDateString()}">Undo</button>` : ''}
                     </div>`;
             }
+            document.getElementById('inputLabel').textContent = `Log Pages for ${selectedDate.toLocaleDateString()}`;
             updatePlan();
+            attachDayListeners();
             attachUndoListeners();
         }
 
@@ -125,9 +130,19 @@
             renderCalendar();
         }
 
+        function attachDayListeners() {
+            document.querySelectorAll('.calendar-day:not(.disabled-day):not(.fw-bold)').forEach(day => {
+                day.addEventListener('click', () => {
+                    selectedDate = new Date(day.dataset.date);
+                    renderCalendar();
+                });
+            });
+        }
+
         function attachUndoListeners() {
             document.querySelectorAll('.undo-btn').forEach(btn => {
-                btn.addEventListener('click', () => {
+                btn.addEventListener('click', e => {
+                    e.stopPropagation(); // Prevent day selection
                     const date = btn.dataset.date;
                     const pages = progress[date] || 0;
                     totalPages -= pages;
@@ -147,9 +162,8 @@
             }
             totalPages += pages;
             pagesRemaining = Math.max(0, 763 - totalPages);
-            const today = new Date(2025, 5, 12).toDateString(); // Simulate today
-            progress[today] = (progress[today] || 0) + pages;
-            entryLog.push({ date: today, pages });
+            progress[selectedDate.toDateString()] = (progress[selectedDate.toDateString()] || 0) + pages;
+            entryLog.push({ date: selectedDate.toDateString(), pages });
             document.getElementById('pagesInput').value = '';
             recalculatePlan();
         });
@@ -178,7 +192,8 @@
         });
 
         document.getElementById('todayBtn').addEventListener('click', () => {
-            currentDate = new Date(2025, 5, 12); // Reset to today
+            currentDate = new Date(2025, 5, 12);
+            selectedDate = new Date(2025, 5, 12);
             renderCalendar();
         });
 
