@@ -18,14 +18,19 @@
         .nav-btn { font-size: 1.2rem; padding: 10px 20px; }
         .undo-btn { font-size: 0.8rem; padding: 5px; min-width: 40px; }
         .calendar-container { overflow-y: auto; max-height: 70vh; }
+        .logo-img { max-width: 150px; height: auto; display: block; margin: 10px auto; }
         @media (min-width: 768px) {
             .calendar-day { min-height: 90px; font-size: 1rem; }
+            .logo-img { max-width: 200px; }
         }
     </style>
 </head>
 <body>
     <div class="container py-3">
-        <h1 class="h3 text-center my-3">SAT Study Planner</h1>
+        <header class="text-center my-3">
+            <img src="sat-logo.png" alt="SAT Study Planner Logo" class="logo-img">
+            <h1 class="h3">SAT Study Planner</h1>
+        </header>
         <div class="d-flex justify-content-between mb-3">
             <button id="prevMonth" class="btn btn-outline-primary nav-btn">← Prev</button>
             <button id="todayBtn" class="btn btn-outline-primary nav-btn">Today</button>
@@ -67,7 +72,6 @@
             const month = currentDate.getMonth();
             monthYear.textContent = `${currentDate.toLocaleString('default', { month: 'long' })} ${year}`;
 
-            // Weekday headers
             const daysOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
             daysOfWeek.forEach(day => {
                 calendar.innerHTML += `<div class="col calendar-day fw-bold">${day}</div>`;
@@ -142,7 +146,7 @@
         function attachUndoListeners() {
             document.querySelectorAll('.undo-btn').forEach(btn => {
                 btn.addEventListener('click', e => {
-                    e.stopPropagation(); // Prevent day selection
+                    e.stopPropagation();
                     const date = btn.dataset.date;
                     const pages = progress[date] || 0;
                     totalPages -= pages;
@@ -197,7 +201,6 @@
             renderCalendar();
         });
 
-        // Swipe support
         let touchStartX = 0;
         document.querySelector('.calendar-container').addEventListener('touchstart', e => {
             touchStartX = e.changedTouches[0].screenX;
