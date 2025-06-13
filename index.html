@@ -47,14 +47,16 @@
         .dark .bg-gray-100 { background: #000000; }
         .dark .bg-white { background: #1f2937; } /* Darker calendar background */
         .dark .text-gray-900 { color: #f3f4f6; }
+        /* Navigation Bar */
         .nav-bar {
             position: fixed;
             bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 0;
+            right: 0;
+            margin: 0 16px;
             display: flex;
-            gap: 1rem;
-            padding: 0.5rem 1rem;
+            justify-content: space-around;
+            padding: 0.75rem 1.5rem;
             background: rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             border-radius: 9999px;
@@ -68,7 +70,7 @@
             align-items: center;
             color: #6b7280;
             font-size: 0.75rem;
-            padding: 0.5rem;
+            padding: 0.5rem 1rem;
             border-radius: 0.5rem;
             transition: all 0.2s ease;
         }
@@ -83,14 +85,61 @@
         .dark .nav-item { color: #9ca3af; }
         .dark .nav-item.active { color: #3b82f6; }
         .dark .nav-item:hover:not(.active) { color: #f3f4f6; }
+        /* Tab Content */
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+        /* iOS Settings Style */
+        .settings-section { max-width: 600px; margin: 0 auto; }
+        .settings-group { margin-bottom: 1.5rem; }
+        .settings-group h4 { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; padding-left: 1rem; text-transform: uppercase; }
+        .dark .settings-group h4 { color: #9ca3af; }
+        .settings-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #ffffff;
+            padding: 1rem;
+            margin-bottom: 1px;
+            border-radius: 0.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .dark .settings-item { background: #1f2937; }
+        .settings-item:first-child { border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
+        .settings-item:last-child { border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
+        .settings-item .icon { width: 24px; height: 24px; margin-right: 1rem; }
+        .settings-item .toggle { width: 51px; height: 31px; background: #e5e7eb; border-radius: 9999px; position: relative; transition: background 0.2s; }
+        .settings-item .toggle::after {
+            content: '';
+            width: 27px;
+            height: 27px;
+            background: #ffffff;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            transition: transform 0.2s;
+        }
+        .settings-item .toggle.on { background: #34c759; }
+        .settings-item .toggle.on::after { transform: translateX(20px); }
+        .dark .settings-item .toggle { background: #4b5563; }
+        .dark .settings-item .toggle::after { background: #d1d5db; }
+        .settings-item select, .settings-item button {
+            background: transparent;
+            border: none;
+            color: #3b82f6;
+            font-size: 1rem;
+            text-align: right;
+        }
+        .dark .settings-item select, .dark .settings-item button { color: #60a5fa; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
             .calendar-day .pages-text { font-size: 0.6rem; }
             .calendar-day .undo-btn { font-size: 0.6rem; padding: 0.25rem 0.5rem; }
-            .nav-bar { padding: 0.5rem; }
-            .nav-item { font-size: 0.6rem; padding: 0.25rem; }
+            .nav-bar { padding: 0.5rem 1rem; margin: 0 8px; }
+            .nav-item { font-size: 0.65rem; padding: 0.25rem 0.75rem; }
+            .settings-item { font-size: 0.875rem; padding: 0.75rem; }
+            .settings-item .icon { width: 20px; height: 20px; }
         }
     </style>
 </head>
@@ -159,23 +208,112 @@
 
         <!-- Settings Tab -->
         <div id="settingsTab" class="tab-content animate-slide-in">
-            <div class="settings-section glass p-4 rounded-lg shadow-lg">
-                <h3 class="text-lg font-semibold mb-2">Settings</h3>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Theme</label>
-                    <button id="toggleDarkMode" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition" aria-label="Toggle dark mode">Toggle Dark Mode</button>
+            <div class="settings-section">
+                <!-- General Settings -->
+                <div class="settings-group">
+                    <h4>General</h4>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"/></svg>
+                            <span>Dark Mode</span>
+                        </div>
+                        <div class="toggle" id="darkModeToggle" role="switch" aria-checked="false"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                            <span>Font Size</span>
+                        </div>
+                        <select id="fontSizeSelect" aria-label="Select font size">
+                            <option value="small">Small</option>
+                            <option value="medium" selected>Medium</option>
+                            <option value="large">Large</option>
+                        </select>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Font Size</label>
-                    <select id="fontSizeSelect" class="p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Select font size">
-                        <option value="small">Small</option>
-                        <option value="medium" selected>Medium</option>
-                        <option value="large">Large</option>
-                    </select>
+                <!-- Accessibility Settings -->
+                <div class="settings-group">
+                    <h4>Accessibility</h4>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+                            <span>High Contrast Mode</span>
+                        </div>
+                        <div class="toggle" id="highContrastToggle" role="switch" aria-checked="false"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"/></svg>
+                            <span>Reduced Motion</span>
+                        </div>
+                        <div class="toggle" id="reducedMotionToggle" role="switch" aria-checked="false"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                            <span>Screen Reader Optimization</span>
+                        </div>
+                        <div class="toggle" id="screenReaderToggle" role="switch" aria-checked="false"></div>
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium mb-1">Reset Progress</label>
-                    <button id="resetProgress" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Reset all progress">Reset All Progress</button>
+                <!-- Notifications -->
+                <div class="settings-group">
+                    <h4>Notifications</h4>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+                            <span>Daily Reminders</span>
+                        </div>
+                        <div class="toggle" id="remindersToggle" role="switch" aria-checked="false"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            <span>Reminder Time</span>
+                        </div>
+                        <select id="reminderTimeSelect" aria-label="Select reminder time">
+                            <option value="8">8:00 AM</option>
+                            <option value="12">12:00 PM</option>
+                            <option value="18">6:00 PM</option>
+                            <option value="20" selected>8:00 PM</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Study Plan -->
+                <div class="settings-group">
+                    <h4>Study Plan</h4>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                            <span>Show Completed Days</span>
+                        </div>
+                        <div class="toggle" id="showCompletedToggle" role="switch" aria-checked="true"></div>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            <span>Highlight Study Periods</span>
+                        </div>
+                        <div class="toggle" id="highlightPeriodsToggle" role="switch" aria-checked="false"></div>
+                    </div>
+                </div>
+                <!-- Data Management -->
+                <div class="settings-group">
+                    <h4>Data Management</h4>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+                            <span>Export Progress</span>
+                        </div>
+                        <button id="exportProgress">Export</button>
+                    </div>
+                    <div class="settings-item">
+                        <div class="flex items-center">
+                            <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <span>Reset Progress</span>
+                        </div>
+                        <button id="resetProgress">Reset</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -212,6 +350,17 @@
         let entryLog = [];
         let testLog = [];
         let adaptiveMode = false;
+        let settings = {
+            darkMode: false,
+            fontSize: 'medium',
+            highContrast: false,
+            reducedMotion: false,
+            screenReader: false,
+            reminders: false,
+            reminderTime: '20',
+            showCompleted: true,
+            highlightPeriods: false
+        };
 
         // Load state from localStorage
         function loadState() {
@@ -243,15 +392,29 @@
                 adaptiveMode = localStorage.getItem('satAdaptiveMode') === 'true';
                 document.getElementById('adaptiveMode').checked = adaptiveMode;
 
-                const savedTheme = localStorage.getItem('theme');
-                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                    document.documentElement.classList.add('dark');
-                }
-
-                const savedFontSize = localStorage.getItem('fontSize');
-                if (savedFontSize) {
-                    document.getElementById('fontSizeSelect').value = savedFontSize;
-                    updateFontSize(savedFontSize);
+                const savedSettings = localStorage.getItem('satSettings');
+                if (savedSettings) {
+                    settings = JSON.parse(savedSettings);
+                    document.getElementById('darkModeToggle').classList.toggle('on', settings.darkMode);
+                    document.getElementById('darkModeToggle').setAttribute('aria-checked', settings.darkMode);
+                    document.documentElement.classList.toggle('dark', settings.darkMode);
+                    document.getElementById('fontSizeSelect').value = settings.fontSize;
+                    updateFontSize(settings.fontSize);
+                    document.getElementById('highContrastToggle').classList.toggle('on', settings.highContrast);
+                    document.getElementById('highContrastToggle').setAttribute('aria-checked', settings.highContrast);
+                    updateHighContrast(settings.highContrast);
+                    document.getElementById('reducedMotionToggle').classList.toggle('on', settings.reducedMotion);
+                    document.getElementById('reducedMotionToggle').setAttribute('aria-checked', settings.reducedMotion);
+                    updateReducedMotion(settings.reducedMotion);
+                    document.getElementById('screenReaderToggle').classList.toggle('on', settings.screenReader);
+                    document.getElementById('screenReaderToggle').setAttribute('aria-checked', settings.screenReader);
+                    document.getElementById('remindersToggle').classList.toggle('on', settings.reminders);
+                    document.getElementById('remindersToggle').setAttribute('aria-checked', settings.reminders);
+                    document.getElementById('reminderTimeSelect').value = settings.reminderTime;
+                    document.getElementById('showCompletedToggle').classList.toggle('on', settings.showCompleted);
+                    document.getElementById('showCompletedToggle').setAttribute('aria-checked', settings.showCompleted);
+                    document.getElementById('highlightPeriodsToggle').classList.toggle('on', settings.highlightPeriods);
+                    document.getElementById('highlightPeriodsToggle').setAttribute('aria-checked', settings.highlightPeriods);
                 }
             } catch (e) {
                 console.error('Failed to load state:', e);
@@ -270,8 +433,34 @@
             localStorage.setItem('satSelectedDate', selectedDate.toISOString());
             localStorage.setItem('satCurrentDate', currentDate.toISOString());
             localStorage.setItem('satAdaptiveMode', adaptiveMode);
-            localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
-            localStorage.setItem('fontSize', document.getElementById('fontSizeSelect').value);
+            localStorage.setItem('satSettings', JSON.stringify(settings));
+        }
+
+        // Settings Handlers
+        function updateFontSize(size) {
+            const fontSizes = { small: '0.875rem', medium: '1rem', large: '1.125rem' };
+            document.documentElement.style.fontSize = fontSizes[size];
+        }
+
+        function updateHighContrast(enabled) {
+            document.documentElement.classList.toggle('high-contrast', enabled);
+            if (enabled) {
+                document.documentElement.style.setProperty('--primary-color', '#ffffff');
+                document.documentElement.style.setProperty('--bg-color', '#000000');
+            } else {
+                document.documentElement.style.removeProperty('--primary-color');
+                document.documentElement.style.removeProperty('--bg-color');
+            }
+        }
+
+        function updateReducedMotion(enabled) {
+            if (enabled) {
+                document.documentElement.style.setProperty('--animate-duration', '0s');
+                document.querySelectorAll('.animate-slide-in').forEach(el => el.style.animation = 'none');
+            } else {
+                document.documentElement.style.removeProperty('--animate-duration');
+                document.querySelectorAll('.animate-slide-in').forEach(el => el.style.animation = '');
+            }
         }
 
         function renderCalendar() {
@@ -301,8 +490,10 @@
                 const isCurrent = date.toDateString() === new Date().toDateString();
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
+                if (!settings.showCompleted && isCompleted) return;
+                const highlightClass = settings.highlightPeriods && isSummer ? 'bg-yellow-100 dark:bg-yellow-900' : '';
                 calendar.innerHTML += `
-                    <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''}" data-date="${date.toDateString()}" role="button" tabindex="${isBeforeStart ? '-1' : '0'}" aria-label="Day ${day}, ${pages} pages planned${isCompleted ? ', completed' : ''}${isCurrent ? ', today' : ''}${isSelected ? ', selected' : ''}">
+                    <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''} ${highlightClass}" data-date="${date.toDateString()}" role="button" tabindex="${isBeforeStart ? '-1' : '0'}" aria-label="Day ${day}, ${pages} pages planned${isCompleted ? ', completed' : ''}${isCurrent ? ', today' : ''}${isSelected ? ', selected' : ''}">
                         <span>${day}</span>
                         ${!isBeforeStart ? `<span class="pages-text">${pages} pages</span>` : ''}
                         ${isCompleted ? `<br><button class="undo-btn mt-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700" data-date="${date.toDateString()}" aria-label="Undo entry for ${date.toDateString()}">Undo</button>` : ''}
@@ -490,20 +681,81 @@
             });
         });
 
-        // Settings Handlers
-        function updateFontSize(size) {
-            const fontSizes = { small: '0.875rem', medium: '1rem', large: '1.125rem' };
-            document.documentElement.style.fontSize = fontSizes[size];
+        // Settings Event Listeners
+        document.getElementById('darkModeToggle').addEventListener('click', () => {
+            settings.darkMode = !settings.darkMode;
+            document.getElementById('darkModeToggle').classList.toggle('on', settings.darkMode);
+            document.getElementById('darkModeToggle').setAttribute('aria-checked', settings.darkMode);
+            document.documentElement.classList.toggle('dark', settings.darkMode);
             saveState();
-        }
-
-        document.getElementById('fontSizeSelect').addEventListener('change', () => {
-            updateFontSize(document.getElementById('fontSizeSelect').value);
         });
 
-        document.getElementById('toggleDarkMode').addEventListener('click', () => {
-            document.documentElement.classList.toggle('dark');
+        document.getElementById('fontSizeSelect').addEventListener('change', () => {
+            settings.fontSize = document.getElementById('fontSizeSelect').value;
+            updateFontSize(settings.fontSize);
             saveState();
+        });
+
+        document.getElementById('highContrastToggle').addEventListener('click', () => {
+            settings.highContrast = !settings.highContrast;
+            document.getElementById('highContrastToggle').classList.toggle('on', settings.highContrast);
+            document.getElementById('highContrastToggle').setAttribute('aria-checked', settings.highContrast);
+            updateHighContrast(settings.highContrast);
+            saveState();
+        });
+
+        document.getElementById('reducedMotionToggle').addEventListener('click', () => {
+            settings.reducedMotion = !settings.reducedMotion;
+            document.getElementById('reducedMotionToggle').classList.toggle('on', settings.reducedMotion);
+            document.getElementById('reducedMotionToggle').setAttribute('aria-checked', settings.reducedMotion);
+            updateReducedMotion(settings.reducedMotion);
+            saveState();
+        });
+
+        document.getElementById('screenReaderToggle').addEventListener('click', () => {
+            settings.screenReader = !settings.screenReader;
+            document.getElementById('screenReaderToggle').classList.toggle('on', settings.screenReader);
+            document.getElementById('screenReaderToggle').setAttribute('aria-checked', settings.screenReader);
+            saveState();
+        });
+
+        document.getElementById('remindersToggle').addEventListener('click', () => {
+            settings.reminders = !settings.reminders;
+            document.getElementById('remindersToggle').classList.toggle('on', settings.reminders);
+            document.getElementById('remindersToggle').setAttribute('aria-checked', settings.reminders);
+            saveState();
+        });
+
+        document.getElementById('reminderTimeSelect').addEventListener('change', () => {
+            settings.reminderTime = document.getElementById('reminderTimeSelect').value;
+            saveState();
+        });
+
+        document.getElementById('showCompletedToggle').addEventListener('click', () => {
+            settings.showCompleted = !settings.showCompleted;
+            document.getElementById('showCompletedToggle').classList.toggle('on', settings.showCompleted);
+            document.getElementById('showCompletedToggle').setAttribute('aria-checked', settings.showCompleted);
+            renderCalendar();
+            saveState();
+        });
+
+        document.getElementById('highlightPeriodsToggle').addEventListener('click', () => {
+            settings.highlightPeriods = !settings.highlightPeriods;
+            document.getElementById('highlightPeriodsToggle').classList.toggle('on', settings.highlightPeriods);
+            document.getElementById('highlightPeriodsToggle').setAttribute('aria-checked', settings.highlightPeriods);
+            renderCalendar();
+            saveState();
+        });
+
+        document.getElementById('exportProgress').addEventListener('click', () => {
+            const data = { progress, entryLog, testLog, studyPlan, totalPages, pagesRemaining };
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'sat_study_progress.json';
+            a.click();
+            URL.revokeObjectURL(url);
         });
 
         document.getElementById('resetProgress').addEventListener('click', () => {
