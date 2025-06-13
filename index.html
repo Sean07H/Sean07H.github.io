@@ -37,13 +37,21 @@
             border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
             z-index: 10;
         }
-        button:focus { outline: none; ring: 2px solid #3b82f6; }
+        button:focus, .calendar-day:focus {
+            outline: 2px solid #3b82f6;
+            outline-offset: 2px;
+        }
+        @media (max-width: 640px) {
+            .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
+            .calendar-day br { display: none; }
+            .calendar-day .undo-btn { font-size: 0.6rem; padding: 0.25rem 0.5rem; }
+        }
     </style>
 </head>
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 min-h-screen flex flex-col">
     <div class="container mx-auto p-4 flex-grow">
         <header class="text-center mb-6 sticky top-0 z-10 glass p-4 rounded-lg">
-            <img src="sat-logo.png" alt="SAT Study Planner Logo" class="w-32 mx-auto mb-2">
+            <img src="sat-logo.png" alt="SAT Study Planner Logo" class="w-32 mx-auto mb-2" loading="lazy">
             <h1 class="text-2xl font-bold">SAT Study Planner</h1>
             <button id="toggleDarkMode" class="mt-2 text-sm text-gray-600 dark:text-gray-400 hover:underline" aria-label="Toggle dark mode">Toggle Dark Mode</button>
         </header>
@@ -63,13 +71,37 @@
                 <button id="submitPages" class="bg-blue-600 text-white px-4 rounded-r-lg hover:bg-blue-700 transition" aria-label="Submit pages">Submit</button>
             </div>
             <button id="undoLast" class="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition" aria-label="Undo last entry">Undo Last Entry</button>
+            <div class="mt-4 flex items-center">
+                <label class="mr-2">Enable Adaptive Plan:</label>
+                <input type="checkbox" id="adaptiveMode" class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" aria-label="Enable adaptive study plan">
+            </div>
             <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
                 <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
                 <p>Progress: <span id="progressPercent">0%</span></p>
                 <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
+                <p>Estimated Completion: <span id="completionDate">N/A</span> <span id="completionWarning" class="text-red-500 hidden">⚠ Falling behind!</span></p>
             </div>
             <p class="mt-2">Current Plan: <span id="currentPlan"></span></p>
+            <div class="mt-4">
+                <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                    <div id="progressBar" class="bg-blue-600 h-2.5 rounded-full" style="width: 0%"></div>
+                </div>
+            </div>
+        </div>
+        <div class="test-section glass p-4 rounded-lg shadow-lg mb-6 animate-slide-in">
+            <h3 class="text-lg font-semibold mb-2">Practice Test Scores</h3>
+            <div class="flex flex-wrap gap-2 mb-4">
+                <input type="number" id="mathScore" min="200" max="800" placeholder="Math (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Math score">
+                <input type="number" id="readingScore" min="200" max="800" placeholder="Reading (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Reading score">
+                <input type="number" id="writingScore" min="200" max="800" placeholder="Writing (200-800)" class="w-32 p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700" aria-label="Writing score">
+                <button id="submitTest" class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition" aria-label="Submit test scores">Submit Test</button>
+            </div>
+            <p class="text-sm">Focus Area: <span id="focusArea">None</span></p>
+            <div class="mt-2">
+                <h4 class="text-sm font-semibold">Recent Tests:</h4>
+                <ul id="testLog" class="text-sm list-disc pl-5"></ul>
+            </div>
         </div>
         <footer class="text-center mt-auto">
             <p class="text-gray-600 dark:text-gray-400">Goal: 763 pages by March 31, 2025</p>
@@ -85,33 +117,46 @@
         let studyPlan = { summerPages: 8, schoolPages: 1, weekendPages: 3 };
         let progress = {};
         let entryLog = [];
+        let testLog = [];
+        let adaptiveMode = false;
 
         // Load state from localStorage
         function loadState() {
-            const savedProgress = localStorage.getItem('satProgress');
-            if (savedProgress) progress = JSON.parse(savedProgress);
+            try {
+                const savedProgress = localStorage.getItem('satProgress');
+                if (savedProgress) progress = JSON.parse(savedProgress);
 
-            const savedEntryLog = localStorage.getItem('satEntryLog');
-            if (savedEntryLog) entryLog = JSON.parse(savedEntryLog);
+                const savedEntryLog = localStorage.getItem('satEntryLog');
+                if (savedEntryLog) entryLog = JSON.parse(savedEntryLog);
 
-            const savedStudyPlan = localStorage.getItem('satStudyPlan');
-            if (savedStudyPlan) studyPlan = JSON.parse(savedStudyPlan);
+                const savedTestLog = localStorage.getItem('satTestLog');
+                if (savedTestLog) testLog = JSON.parse(savedTestLog);
 
-            const savedTotalPages = localStorage.getItem('satTotalPages');
-            if (savedTotalPages) totalPages = parseInt(savedTotalPages);
+                const savedStudyPlan = localStorage.getItem('satStudyPlan');
+                if (savedStudyPlan) studyPlan = JSON.parse(savedStudyPlan);
 
-            const savedPagesRemaining = localStorage.getItem('satPagesRemaining');
-            if (savedPagesRemaining) pagesRemaining = parseInt(savedPagesRemaining);
+                const savedTotalPages = localStorage.getItem('satTotalPages');
+                if (savedTotalPages) totalPages = parseInt(savedTotalPages);
 
-            const savedSelectedDate = localStorage.getItem('satSelectedDate');
-            if (savedSelectedDate) selectedDate = new Date(savedSelectedDate);
+                const savedPagesRemaining = localStorage.getItem('satPagesRemaining');
+                if (savedPagesRemaining) pagesRemaining = parseInt(savedPagesRemaining);
 
-            const savedCurrentDate = localStorage.getItem('satCurrentDate');
-            if (savedCurrentDate) currentDate = new Date(savedCurrentDate);
+                const savedSelectedDate = localStorage.getItem('satSelectedDate');
+                if (savedSelectedDate) selectedDate = new Date(savedSelectedDate);
 
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-                document.documentElement.classList.add('dark');
+                const savedCurrentDate = localStorage.getItem('satCurrentDate');
+                if (savedCurrentDate) currentDate = new Date(savedCurrentDate);
+
+                adaptiveMode = localStorage.getItem('satAdaptiveMode') === 'true';
+                document.getElementById('adaptiveMode').checked = adaptiveMode;
+
+                const savedTheme = localStorage.getItem('theme');
+                if (savedTheme === 'dark' || (!savedTheme && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+                    document.documentElement.classList.add('dark');
+                }
+            } catch (e) {
+                console.error('Failed to load state:', e);
+                alert('Error loading your progress. Resetting to defaults.');
             }
         }
 
@@ -119,11 +164,13 @@
         function saveState() {
             localStorage.setItem('satProgress', JSON.stringify(progress));
             localStorage.setItem('satEntryLog', JSON.stringify(entryLog));
+            localStorage.setItem('satTestLog', JSON.stringify(testLog));
             localStorage.setItem('satStudyPlan', JSON.stringify(studyPlan));
             localStorage.setItem('satTotalPages', totalPages);
             localStorage.setItem('satPagesRemaining', pagesRemaining);
             localStorage.setItem('satSelectedDate', selectedDate.toISOString());
             localStorage.setItem('satCurrentDate', currentDate.toISOString());
+            localStorage.setItem('satAdaptiveMode', adaptiveMode);
             localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
         }
 
@@ -147,7 +194,7 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const isBeforeStart = date < new Date(2024, 5, 13); // Adjust start date as needed
+                const isBeforeStart = date < new Date(2024, 5, 13);
                 const isSummer = date < new Date(2024, 7, 13);
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
@@ -155,7 +202,7 @@
                 const isSelected = date.toDateString() === selectedDate.toDateString();
                 const isCompleted = progress[date.toDateString()];
                 calendar.innerHTML += `
-                    <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''}" data-date="${date.toDateString()}" role="button" tabindex="0" aria-label="Day ${day}, ${pages} pages${isCompleted ? ', completed' : ''}">
+                    <div class="calendar-day text-center p-2 border rounded ${isCurrent ? 'current-day bg-blue-500 text-white' : ''} ${isCompleted ? 'completed-day bg-green-500 text-white' : ''} ${isSelected ? 'selected-day border-yellow-400' : ''} ${isBeforeStart ? 'disabled-day bg-gray-300 dark:bg-gray-600 cursor-not-allowed' : ''}" data-date="${date.toDateString()}" role="button" tabindex="${isBeforeStart ? '-1' : '0'}" aria-label="Day ${day}, ${pages} pages planned${isCompleted ? ', completed' : ''}${isCurrent ? ', today' : ''}${isSelected ? ', selected' : ''}">
                         ${day}<br>${pages} pages
                         ${isCompleted ? `<br><button class="undo-btn mt-1 px-2 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700" data-date="${date.toDateString()}" aria-label="Undo entry for ${date.toDateString()}">Undo</button>` : ''}
                     </div>`;
@@ -164,6 +211,7 @@
             document.getElementById('pagesInput').focus();
             updatePlan();
             updateStats();
+            updateTestLog();
             attachDayListeners();
             attachUndoListeners();
         }
@@ -178,14 +226,45 @@
         function updateStats() {
             const progressPercent = ((totalPages / 763) * 100).toFixed(1);
             document.getElementById('progressPercent').textContent = `${progressPercent}%`;
+            document.getElementById('progressBar').style.width = `${progressPercent}%`;
             const daysWithEntries = Object.keys(progress).length;
-            const avgPages = daysWithEntries > 0 ? (totalPages / daysWithEntries).toFixed(1) : 0;
-            document.getElementById('avgPages').textContent = avgPages;
+            const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
+            document.getElementById('avgPages').textContent = avgPages.toFixed(1);
+
+            // Goal Forecasting
+            const targetDate = new Date(2025, 2, 31);
+            let completionDate = 'N/A';
+            let showWarning = false;
+            if (avgPages > 0) {
+                const remainingDays = Math.ceil(pagesRemaining / avgPages);
+                const estimatedDate = new Date();
+                estimatedDate.setDate(estimatedDate.getDate() + remainingDays);
+                completionDate = estimatedDate.toLocaleDateString();
+                showWarning = estimatedDate > targetDate;
+            }
+            document.getElementById('completionDate').textContent = completionDate;
+            document.getElementById('completionWarning').classList.toggle('hidden', !showWarning);
+        }
+
+        function updateTestLog() {
+            const testLogEl = document.getElementById('testLog');
+            testLogEl.innerHTML = testLog.slice(-3).map(test => {
+                const date = new Date(test.date).toLocaleDateString();
+                return `<li>${date}: Math ${test.math}, Reading ${test.reading}, Writing ${test.writing} (Total: ${test.math + test.reading + test.writing})</li>`;
+            }).join('');
+            const latestTest = testLog[testLog.length - 1];
+            if (latestTest) {
+                const scores = { Math: latestTest.math, Reading: latestTest.reading, Writing: latestTest.writing };
+                const focusArea = Object.keys(scores).reduce((a, b) => scores[a] < scores[b] ? a : b);
+                document.getElementById('focusArea').textContent = `${focusArea} (Score: ${scores[focusArea]})`;
+            } else {
+                document.getElementById('focusArea').textContent = 'None';
+            }
         }
 
         function recalculatePlan() {
             const today = new Date();
-            const summerEnd = new Date(2024, 7, 12); // Adjust as needed
+            const summerEnd = new Date(2024, 7, 12);
             const endDate = new Date(2025, 2, 31);
             let summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
             let schoolDays = 143, weekendDays = 58;
@@ -199,10 +278,18 @@
                 alert('Congratulations! You’ve completed the 763 pages!');
                 return;
             }
+            let performanceFactor = 1;
+            if (adaptiveMode) {
+                const daysWithEntries = Object.keys(progress).length;
+                const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
+                const expectedAvg = (studyPlan.summerPages + studyPlan.schoolPages + studyPlan.weekendPages) / 3;
+                performanceFactor = avgPages > 0 ? Math.min(Math.max(avgPages / expectedAvg, 0.8), 1.2) : 1;
+            }
             const schoolPages = summerDays > 0 ? 143 : schoolDays;
             const y = Math.ceil((pagesRemaining - schoolPages) / (weekendDays + summerDays));
-            studyPlan.weekendPages = Math.max(3, y);
-            studyPlan.summerPages = summerDays > 0 ? studyPlan.weekendPages : studyPlan.summerPages;
+            studyPlan.weekendPages = Math.max(3, Math.round(y * performanceFactor));
+            studyPlan.summerPages = summerDays > 0 ? Math.round(studyPlan.weekendPages * performanceFactor) : studyPlan.summerPages;
+            studyPlan.schoolPages = Math.round(1 * performanceFactor);
             renderCalendar();
         }
 
@@ -264,9 +351,24 @@
             recalculatePlan();
         });
 
+        document.getElementById('submitTest').addEventListener('click', () => {
+            const math = parseInt(document.getElementById('mathScore').value) || 0;
+            const reading = parseInt(document.getElementById('readingScore').value) || 0;
+            const writing = parseInt(document.getElementById('writingScore').value) || 0;
+            if (math < 200 || math > 800 || reading < 200 || reading > 800 || writing < 200 || writing > 800) {
+                alert('Please enter valid scores between 200 and 800.');
+                return;
+            }
+            testLog.push({ date: new Date().toISOString(), math, reading, writing });
+            document.getElementById('mathScore').value = '';
+            document.getElementById('readingScore').value = '';
+            document.getElementById('writingScore').value = '';
+            updateTestLog();
+            saveState();
+        });
+
         document.getElementById('prevMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() - 1);
-            // Adjust selectedDate to a valid day in the new month
             const daysInNewMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             if (selectedDate.getDate() > daysInNewMonth) {
                 selectedDate.setDate(daysInNewMonth);
@@ -278,7 +380,6 @@
 
         document.getElementById('nextMonth').addEventListener('click', () => {
             currentDate.setMonth(currentDate.getMonth() + 1);
-            // Adjust selectedDate to a valid day in the new month
             const daysInNewMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).getDate();
             if (selectedDate.getDate() > daysInNewMonth) {
                 selectedDate.setDate(daysInNewMonth);
@@ -292,6 +393,12 @@
             currentDate = new Date();
             selectedDate = new Date();
             renderCalendar();
+        });
+
+        document.getElementById('adaptiveMode').addEventListener('change', () => {
+            adaptiveMode = document.getElementById('adaptiveMode').checked;
+            recalculatePlan();
+            saveState();
         });
 
         // Swipe navigation
