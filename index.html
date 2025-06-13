@@ -13,7 +13,7 @@
         .dark .calendar-day.completed-day { background: #22c55e; position: relative; }
         .dark .calendar-day.current-day { background: #3b82f6; }
         .dark .calendar-day.selected-day { border-color: #facc15 !important; }
-        .dark .disabled-day { background: #374151; color: #9ca3af; }
+        .dark .disabled-day { background: #1f2937; color: #9ca3af; }
         .completed-day::after {
             content: '✔';
             position: absolute;
@@ -22,7 +22,7 @@
             color: white;
         }
         .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
-        .dark .glass { background: rgba(31, 41, 55, 0.3); }
+        .dark .glass { background: rgba(31, 41, 55, 0.5); }
         .animate-slide-in { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn {
             from { transform: translateY(20px); opacity: 0; }
@@ -43,6 +43,10 @@
         }
         .calendar-day span { display: block; }
         .calendar-day .pages-text { font-size: 0.75rem; color: inherit; }
+        .dark { background: #000000; } /* Black background for dark mode */
+        .dark .bg-gray-100 { background: #000000; }
+        .dark .bg-white { background: #1f2937; } /* Darker calendar background */
+        .dark .text-gray-900 { color: #f3f4f6; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
             .calendar-day .pages-text { font-size: 0.6rem; }
@@ -196,8 +200,8 @@
             }
             for (let day = 1; day <= daysInMonth; day++) {
                 const date = new Date(year, month, day);
-                const isBeforeStart = date < new Date(2024, 5, 13);
-                const isSummer = date < new Date(2024, 7, 13);
+                const isBeforeStart = date < new Date(2024, 5, 13); // June 13, 2024
+                const isSummer = date < new Date(2024, 7, 13); // August 13, 2024
                 const isWeekend = date.getDay() === 0 || date.getDay() === 6;
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
                 const isCurrent = date.toDateString() === new Date().toDateString();
@@ -236,7 +240,7 @@
             document.getElementById('avgPages').textContent = avgPages.toFixed(1);
 
             // Goal Forecasting
-            const targetDate = new Date(2025, 2, 31);
+            const targetDate = new Date(2025, 2, 31); // March 31, 2025
             let completionDate = 'N/A';
             let showWarning = false;
             if (avgPages > 0) {
@@ -291,20 +295,27 @@
 
         function recalculatePlan() {
             const today = new Date();
-            const summerEnd = new Date(2024, 7, 12);
-            const endDate = new Date(2025, 2, 31);
+            const summerEnd = new Date(2024, 7, 13); // August 13, 2024
+            const endDate = new Date(2025, 2, 31); // March 31, 2025
             let summerDays = Math.max(0, Math.ceil((summerEnd - today) / (1000 * 60 * 60 * 24)));
-            let schoolDays = 143, weekendDays = 58;
+            let remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+            let schoolDays = 0, weekendDays = 0;
+
             if (today >= summerEnd) {
                 summerDays = 0;
-                const remainingDays = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
-                schoolDays = Math.round(remainingDays * 5 / 7);
+                schoolDays = Math.round(remainingDays * 5 / 7); // Approximate weekdays
                 weekendDays = remainingDays - schoolDays;
+            } else {
+                const schoolPeriodDays = Math.ceil((endDate - summerEnd) / (1000 * 60 * 60 * 24));
+                schoolDays = Math.round(schoolPeriodDays * 5 / 7);
+                weekendDays = schoolPeriodDays - schoolDays;
             }
+
             if (pagesRemaining <= 0) {
                 alert('Congratulations! You’ve completed the 763 pages!');
                 return;
             }
+
             let performanceFactor = 1;
             if (adaptiveMode) {
                 const daysWithEntries = Object.keys(progress).length;
@@ -312,11 +323,30 @@
                 const expectedAvg = (studyPlan.summerPages + studyPlan.schoolPages + studyPlan.weekendPages) / 3;
                 performanceFactor = avgPages > 0 ? Math.min(Math.max(avgPages / expectedAvg, 0.8), 1.2) : 1;
             }
-            const schoolPages = summerDays > 0 ? 143 : schoolDays;
-            const y = Math.ceil((pagesRemaining - schoolPages) / (weekendDays + summerDays));
-            studyPlan.weekendPages = Math.max(3, Math.round(y * performanceFactor));
-            studyPlan.summerPages = summerDays > 0 ? Math.round(studyPlan.weekendPages * performanceFactor) : studyPlan.summerPages;
-            studyPlan.schoolPages = Math.round(1 * performanceFactor);
+
+            // Base plan: 8 pages/day in summer, 1 page/day school, 3 pages/day weekends
+            const totalSummerPages = summerDays * 8;
+            const totalSchoolPages = schoolDays * 1;
+            const totalWeekendPages = weekendDays * 3;
+            let remainingPages = pagesRemaining - (totalSummerPages + totalSchoolPages + totalWeekendPages);
+
+            if (remainingPages > 0) {
+                // Distribute remaining pages
+                const extraPerWeekendDay = Math.ceil(remainingPages / (weekendDays + summerDays));
+                studyPlan.weekendPages = Math.max(3, 3 + extraPerWeekendDay);
+                studyPlan.summerPages = summerDays > 0 ? Math.max(8, 8 + extraPerWeekendDay) : studyPlan.summerPages;
+                studyPlan.schoolPages = 1;
+            } else {
+                studyPlan.summerPages = summerDays > 0 ? 8 : studyPlan.summerPages;
+                studyPlan.schoolPages = 1;
+                studyPlan.weekendPages = 3;
+            }
+
+            // Apply performance factor for adaptive mode
+            studyPlan.summerPages = Math.round(studyPlan.summerPages * performanceFactor);
+            studyPlan.schoolPages = Math.round(studyPlan.schoolPages * performanceFactor);
+            studyPlan.weekendPages = Math.round(studyPlan.weekendPages * performanceFactor);
+
             renderCalendar();
         }
 
