@@ -177,7 +177,7 @@
                 </div>
                 <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
                     <p>Total Pages Studied: <span id="totalPages">0</span>/763</p>
-                    <p>Pages Remaining: <span id="pagesRemaining">763</p>
+                    <p>Pages Remaining: <span id="pagesRemaining">763</span></p>
                     <p>Progress: <span id="progressPercent">0%</span></p>
                     <p>Avg. Pages/Day: <span id="avgPages">0</span></p>
                     <p>Estimated Completion: <span id="completionDate">N/A</span> <span id="completionWarning" class="text-red-500 hidden">⚠ Falling behind!</span></p>
@@ -512,40 +512,38 @@
             }
             ctx.canvas.style.display = 'block';
 
-            ```chartjs
-            {
-                "type": "line",
-                "data": {
-                    "labels": labels,
-                    "datasets": [{
-                        "label": "Pages Studied",
-                        "data": last30Days,
-                        "borderColor": "#3b82f6",
-                        "backgroundColor": "rgba(59, 130, 246, 0.2)",
-                        "fill": true,
-                        "tension": 0.4
+            const chartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Pages Studied',
+                        data: last30Days,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                        fill: true,
+                        tension: 0.4
                     }]
                 },
-                "options": {
-                    "responsive": true,
-                    "maintainAspectRatio": false,
-                    "scales": {
-                        "y": {
-                            "beginAtZero": true,
-                            "title": { "display": true, "text": "Pages" },
-                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: { display: true, text: 'Pages' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
-                        "x": {
-                            "title": { "display": true, "text": "Date" },
-                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        x: {
+                            title: { display: true, text: 'Date' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         }
                     },
-                    "plugins": {
-                        "legend": { "display": true, "position": "top" }
+                    plugins: {
+                        legend: { display: true, position: 'top' }
                     }
                 }
-            }
-            ```
+            };
 
             progressChart = new Chart(ctx, chartConfig);
         }
@@ -565,57 +563,55 @@
             }
             ctx.canvas.style.display = 'block';
 
-            ```chartjs-complete
-            {
-                "type": "line",
-                "data": {
-                    "labels": labels,
-                    "datasets": [
+            const chartConfig = {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
                         {
-                            "label": "Math",
-                            "data": mathScores,
-                            "borderColor": "#ef4444",
-                            "backgroundColor": "rgba(239, 68, 68, 0.2)",
-                            "fill": false
+                            label: 'Math',
+                            data: mathScores,
+                            borderColor: '#ef4444',
+                            backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                            fill: false
                         },
                         {
-                            "label": "Reading",
-                            "data": readingScores,
-                            "borderColor": "#10b981",
-                            "backgroundColor": "rgba(16, 185, 129, 0.2)",
-                            "fill": false
+                            label: 'Reading',
+                            data: readingScores,
+                            borderColor: '#10b981',
+                            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                            fill: false
                         },
                         {
-                            "label": "Writing",
-                            "data": writingScores,
-                            "borderColor": "#f59e0b",
-                            "backgroundColor": "rgba(245, 158, 11, 0.2)",
-                            "fill": false
+                            label: 'Writing',
+                            data: writingScores,
+                            borderColor: '#f59e0b',
+                            backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                            fill: false
                         }
                     ]
                 },
-                "options": {
-                    "responsive": true,
-                    "maintainAspectRatio": false,
-                    "scales": {
-                        "y": {
-                            "beginAtZero": false,
-                            "min": 200,
-                            "max": 800,
-                            "title": { "display": true, "text": "Score" },
-                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 200,
+                            max: 800,
+                            title: { display: true, text: 'Score' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         },
-                        "x": {
-                            "title": { "display": true, "text": "Test Date" },
-                            "grid": { "color": "rgba(255, 255, 255, 0.1)" }
+                        x: {
+                            title: { display: true, text: 'Test Date' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
                         }
                     },
-                    "plugins": {
-                        "legend": { "display": true, "position": "top" }
+                    plugins: {
+                        legend: { display: true, position: 'top' }
                     }
                 }
-            }
-            ```
+            };
 
             scoreChart = new Chart(ctx, chartConfig);
         }
@@ -646,7 +642,7 @@
                 const pages = isBeforeStart ? 0 : isSummer ? studyPlan.summerPages : (isWeekend ? studyPlan.weekendPages : studyPlan.schoolPages);
                 const isCurrent = date.toDateString() === new Date().toDateString();
                 const isSelected = date.toDateString() === selectedDate.toDateString();
-                const isCompleted = progress[date.toDateString()];
+                const isCompleted = progress[date.toDateString()] > 0;
                 if (!settings.showCompleted && isCompleted) continue;
                 const highlightClass = settings.highlightPeriods && isSummer ? 'bg-yellow-100 dark:bg-yellow-900' : '';
                 calendar.innerHTML += `
@@ -678,14 +674,16 @@
             const progressPercent = ((totalPages / 763) * 100).toFixed(1);
             document.getElementById('progressPercent').textContent = `${progressPercent}%`;
             document.getElementById('progressBar').style.width = `${progressPercent}%`;
-            const daysWithEntries = Object.keys(progress).length;
+
+            // Count only days with positive page counts
+            const daysWithEntries = Object.keys(progress).filter(date => progress[date] > 0).length;
             const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
             document.getElementById('avgPages').textContent = avgPages.toFixed(1);
 
             const targetDate = new Date(2026, 2, 31);
             let completionDate = 'N/A';
             let showWarning = false;
-            if (avgPages > 0) {
+            if (avgPages > 0 && pagesRemaining > 0) {
                 const remainingDays = Math.ceil(pagesRemaining / avgPages);
                 const estimatedDate = new Date();
                 estimatedDate.setDate(estimatedDate.getDate() + remainingDays);
@@ -759,18 +757,24 @@
                 return;
             }
 
-            let baseSummerPages = studyPlan.summerPages;
-            let baseSchoolPages = studyPlan.schoolPages;
-            let baseWeekendPages = studyPlan.weekendPages;
+            // Reset study plan to base values
+            let baseSummerPages = 8;
+            let baseSchoolPages = 1;
+            let baseWeekendPages = 3;
 
             if (adaptiveMode) {
-                const daysWithEntries = Object.keys(progress).length;
+                // Calculate average pages per day based on actual progress
+                const daysWithEntries = Object.keys(progress).filter(date => progress[date] > 0).length;
                 const avgPages = daysWithEntries > 0 ? totalPages / daysWithEntries : 0;
                 const expectedAvg = (baseSummerPages + baseSchoolPages + baseWeekendPages) / 3;
                 const performanceFactor = avgPages > 0 ? Math.min(Math.max(avgPages / expectedAvg, 0.8), 1.2) : 1;
                 studyPlan.summerPages = Math.round(baseSummerPages * performanceFactor);
                 studyPlan.schoolPages = Math.max(1, Math.round(baseSchoolPages * performanceFactor));
                 studyPlan.weekendPages = Math.max(3, Math.round(baseWeekendPages * performanceFactor));
+            } else {
+                studyPlan.summerPages = baseSummerPages;
+                studyPlan.schoolPages = baseSchoolPages;
+                studyPlan.weekendPages = baseWeekendPages;
             }
 
             const totalSummerPages = summerDays * studyPlan.summerPages;
@@ -794,7 +798,7 @@
                     renderCalendar();
                 });
                 day.addEventListener('keydown', e => {
-                    if (e.key === 'Enter' || e.key === ' ') {
+                    if (e.key === 'Enter' || e.key === 'Space') {
                         e.preventDefault();
                         selectedDate = new Date(day.dataset.date);
                         renderCalendar();
@@ -964,8 +968,12 @@
             const lastEntry = entryLog.pop();
             totalPages -= lastEntry.pages;
             pagesRemaining = Math.min(763, 763 - totalPages);
-            progress[lastEntry.date] = (progress[lastEntry.date] || 0) - lastEntry.pages;
-            if (progress[lastEntry.date] <= 0) delete progress[lastEntry.date];
+            const date = lastEntry.date;
+            progress[date] = (progress[date] || 0) - lastEntry.pages;
+            if (progress[date] <= 0) {
+                delete progress[date];
+            }
+            entryLog = entryLog.filter(entry => !(entry.date === date && entry.pages === lastEntry.pages));
             recalculatePlan();
         });
 
