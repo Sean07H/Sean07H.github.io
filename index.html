@@ -11,19 +11,14 @@
         body { font-family: 'Inter', sans-serif; }
         .calendar-day { transition: all 0.2s ease; }
         .calendar-day:hover:not(.disabled-day):not(.header-day) { transform: scale(1.05); box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); }
-        .dark .calendar-day.completed-day { background: #22c55e; position: relative; }
-        .dark .calendar-day.current-day { background: #3b82f6; }
-        .dark .calendar-day.selected-day { border-color: #facc15 !important; }
-        .dark .disabled-day { background: #1f2937; color: #9ca3af; }
         .completed-day::after {
             content: '✔';
             position: absolute;
             top: 2px; right: 4px;
             font-size: 0.75rem;
-            color: white;
+            color: #f3f4f6;
         }
         .glass { background: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); }
-        .dark .glass { background: rgba(31, 41, 55, 0.5); }
         .animate-slide-in { animation: slideIn 0.3s ease-out; }
         @keyframes slideIn {
             from { transform: translateY(20px); opacity: 0; }
@@ -34,7 +29,7 @@
             content: attr(data-tooltip);
             position: absolute;
             bottom: 100%; left: 50%; transform: translateX(-50%);
-            background: #1f2937; color: white; padding: 4px 8px;
+            background: #1f2937; color: #f3f4f6; padding: 4px 8px;
             border-radius: 4px; font-size: 0.75rem; white-space: nowrap;
             z-index: 10;
         }
@@ -44,10 +39,6 @@
         }
         .calendar-day span { display: block; }
         .calendar-day .pages-text { font-size: 0.75rem; color: inherit; }
-        .dark { background: #000000; }
-        .dark .bg-gray-100 { background: #000000; }
-        .dark .bg-white { background: #1f2937; }
-        .dark .text-gray-900 { color: #f3f4f6; }
         .nav-bar {
             position: fixed;
             bottom: 20px;
@@ -63,12 +54,10 @@
             box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
             z-index: 50;
         }
-        .dark .nav-bar { background: rgba(31, 41, 55, 0.5); }
         .nav-item {
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #6b7280;
             font-size: 0.75rem;
             padding: 0.5rem 1rem;
             border-radius: 0.5rem;
@@ -80,29 +69,22 @@
         }
         .nav-item:hover:not(.active) {
             background: rgba(255, 255, 255, 0.1);
-            color: #f3f4f6;
         }
-        .dark .nav-item { color: #9ca3af; }
-        .dark .nav-item.active { color: #3b82f6; }
-        .dark .nav-item:hover:not(.active) { color: #f3f4f6; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
         .settings-section { max-width: 600px; margin: 0 auto; }
         .settings-group { margin-bottom: 1.5rem; }
-        .settings-group h4 { font-size: 0.875rem; color: #6b7280; margin-bottom: 0.5rem; padding-left: 1rem; text-transform: uppercase; }
-        .dark .settings-group h4 { color: #9ca3af; }
+        .settings-group h4 { font-size: 0.875rem; margin-bottom: 0.5rem; padding-left: 1rem; text-transform: uppercase; }
         .settings-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: #ffffff;
             padding: 1rem;
             margin-bottom: 1px;
             border-radius: 0.5rem;
             font-size: 1rem;
             cursor: pointer;
         }
-        .dark .settings-item { background: #1f2937; }
         .settings-item:first-child { border-top-left-radius: 0.75rem; border-top-right-radius: 0.75rem; }
         .settings-item:last-child { border-bottom-left-radius: 0.75rem; border-bottom-right-radius: 0.75rem; }
         .settings-item .icon { width: 24px; height: 24px; margin-right: 1rem; }
@@ -120,17 +102,46 @@
         }
         .settings-item .toggle.on { background: #34c759; }
         .settings-item .toggle.on::after { transform: translateX(20px); }
-        .dark .settings-item .toggle { background: #4b5563; }
-        .dark .settings-item .toggle::after { background: #d1d5db; }
         .settings-item select, .settings-item button {
             background: transparent;
             border: none;
-            color: #3b82f6;
             font-size: 1rem;
             text-align: right;
         }
-        .dark .settings-item select, .dark .settings-item button { color: #60a5fa; }
         .chart-container { position: relative; height: 200px; margin-bottom: 1rem; }
+        /* Dark Mode Styles */
+        .dark { background: #111827; color: #f3f4f6; }
+        .dark .bg-gray-100 { background: #111827; }
+        .dark .bg-white { background: #1f2937; }
+        .dark .text-gray-900 { color: #f3f4f6; }
+        .dark .text-gray-600 { color: #d1d5db; }
+        .dark .bg-gray-200 { background: #374151; }
+        .dark .bg-gray-300 { background: #4b5563; }
+        .dark .bg-gray-800 { background: #1f2937; }
+        .dark .bg-blue-600 { background: #2563eb; }
+        .dark .bg-red-600 { background: #dc2626; }
+        .dark .bg-green-500 { background: #22c55e; }
+        .dark .border-gray-300 { border-color: #4b5563; }
+        .dark .border-gray-600 { border-color: #6b7280; }
+        .dark .calendar-day.completed-day { background: #22c55e; color: #f3f4f6; position: relative; }
+        .dark .calendar-day.current-day { background: #3b82f6; color: #f3f4f6; }
+        .dark .calendar-day.selected-day { border-color: #facc15; }
+        .dark .calendar-day.disabled-day { background: #4b5563; color: #9ca3af; }
+        .dark .glass { background: rgba(31, 41, 55, 0.5); }
+        .dark .nav-bar { background: rgba(31, 41, 55, 0.5); }
+        .dark .nav-item { color: #9ca3af; }
+        .dark .nav-item.active { color: #3b82f6; }
+        .dark .nav-item:hover:not(.active) { color: #f3f4f6; background: rgba(255, 255, 255, 0.1); }
+        .dark .settings-group h4 { color: #9ca3af; }
+        .dark .settings-item { background: #1f2937; color: #f3f4f6; }
+        .dark .settings-item .toggle { background: #4b5563; }
+        .dark .settings-item .toggle::after { background: #d1d5db; }
+        .dark .settings-item select, .dark .settings-item button { color: #60a5fa; }
+        .dark input { background: #374151; color: #f3f4f6; border-color: #4b5563; }
+        .dark input::placeholder { color: #9ca3af; }
+        .dark .bg-gray-700 { background: #374151; }
+        /* Chart Canvas Background */
+        .dark canvas { background: #1f2937; }
         @media (max-width: 640px) {
             .calendar-day { font-size: 0.75rem; padding: 0.5rem; }
             .calendar-day .pages-text { font-size: 0.6rem; }
@@ -531,16 +542,18 @@
                     scales: {
                         y: {
                             beginAtZero: true,
-                            title: { display: true, text: 'Pages' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            title: { display: true, text: 'Pages', color: settings.darkMode ? '#f3f4f6' : '#1f2937' },
+                            grid: { color: settings.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                            ticks: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' }
                         },
                         x: {
-                            title: { display: true, text: 'Date' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            title: { display: true, text: 'Date', color: settings.darkMode ? '#f3f4f6' : '#1f2937' },
+                            grid: { color: settings.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                            ticks: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' }
                         }
                     },
                     plugins: {
-                        legend: { display: true, position: 'top' }
+                        legend: { display: true, position: 'top', labels: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' } }
                     }
                 }
             };
@@ -599,16 +612,18 @@
                             beginAtZero: false,
                             min: 200,
                             max: 800,
-                            title: { display: true, text: 'Score' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            title: { display: true, text: 'Score', color: settings.darkMode ? '#f3f4f6' : '#1f2937' },
+                            grid: { color: settings.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                            ticks: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' }
                         },
                         x: {
-                            title: { display: true, text: 'Test Date' },
-                            grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                            title: { display: true, text: 'Test Date', color: settings.darkMode ? '#f3f4f6' : '#1f2937' },
+                            grid: { color: settings.darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)' },
+                            ticks: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' }
                         }
                     },
                     plugins: {
-                        legend: { display: true, position: 'top' }
+                        legend: { display: true, position: 'top', labels: { color: settings.darkMode ? '#f3f4f6' : '#1f2937' } }
                     }
                 }
             };
@@ -843,6 +858,8 @@
             document.getElementById('darkModeToggle').classList.toggle('on', settings.darkMode);
             document.getElementById('darkModeToggle').setAttribute('aria-checked', settings.darkMode);
             document.documentElement.classList.toggle('dark', settings.darkMode);
+            renderProgressChart();
+            renderScoreChart();
             saveState();
         });
 
