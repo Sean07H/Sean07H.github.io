@@ -13,18 +13,43 @@ let showStars = true;
 let showPlanets = true;
 let showConstellations = false;
 
+function updateButtonState(button, isActive) {
+    if (isActive) {
+        button.classList.add('active');
+    } else {
+        button.classList.remove('active');
+    }
+}
+
+toggleStarsBtn.onclick = () => {
+    showStars = !showStars;
+    updateButtonState(toggleStarsBtn, showStars);
+};
+
+togglePlanetsBtn.onclick = () => {
+    showPlanets = !showPlanets;
+    updateButtonState(togglePlanetsBtn, showPlanets);
+};
+
+toggleConstellationsBtn.onclick = () => {
+    showConstellations = !showConstellations;
+    updateButtonState(toggleConstellationsBtn, showConstellations);
+};
+
+// Set initial states
+updateButtonState(toggleStarsBtn, showStars);
+updateButtonState(togglePlanetsBtn, showPlanets);
+updateButtonState(toggleConstellationsBtn, showConstellations);
+
 let stars = [];
 await fetch('bright-stars.json').then(r => r.json()).then(data => stars = data);
 
+// Start camera
 navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
   .then(stream => { video.srcObject = stream; })
   .catch(e => alert("Camera error: " + e));
 
-// Handle toggles
-toggleStarsBtn.onclick = () => showStars = !showStars;
-togglePlanetsBtn.onclick = () => showPlanets = !showPlanets;
-toggleConstellationsBtn.onclick = () => showConstellations = !showConstellations;
-
+// Capture and overlay stars/planets
 captureBtn.addEventListener('click', () => {
   canvas.width = video.videoWidth;
   canvas.height = video.videoHeight;
@@ -71,7 +96,6 @@ captureBtn.addEventListener('click', () => {
       });
     }
 
-    // Placeholder for future constellation drawing
     if (showConstellations) {
       ctx.strokeStyle = "white";
       ctx.setLineDash([5, 3]);
