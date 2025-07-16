@@ -4,25 +4,37 @@
   box-sizing: border-box;
 }
 
-html, body, #map {
+html, body {
   height: 100%;
-  width: 100%;
   font-family: sans-serif;
+}
+
+#map {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
 }
 
 #center-btn, #dark-mode-toggle {
   position: absolute;
+  z-index: 1001;
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 20px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+#center-btn {
   bottom: 80px;
   right: 10px;
-  z-index: 1000;
-  background: white;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 20px;
-  border: 1px solid #aaa;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
 #dark-mode-toggle {
-  bottom: 130px;
+  bottom: 140px;
+  right: 10px;
 }
