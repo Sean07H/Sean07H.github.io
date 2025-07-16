@@ -7,24 +7,16 @@
   <link rel="stylesheet" href="styles.css" />
   <link
     rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
   />
-  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
 </head>
 <body>
   <div id="map"></div>
-  <div class="controls">
-    <input id="searchBox" type="text" placeholder="Search location" />
-    <button onclick="searchLocation()">Search</button>
-    <button onclick="centerMap()">📍 Center</button>
-    <button onclick="startTracking()">▶ Track</button>
-    <button onclick="stopTracking()">■ Stop</button>
-    <button onclick="enableCompass(map)">🧭 Compass</button>
-    <button onclick="shakeToRecenter()">Shake Mode</button>
-  </div>
 
+  <button id="center-btn">📍</button>
+  <button id="dark-mode-toggle">🌓</button>
+
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="app.js"></script>
-  <script src="phase2.js"></script>
-  <script src="phase3.js"></script>
 </body>
 </html>
