@@ -1,34 +1,28 @@
-html, body {
+* {
   margin: 0;
   padding: 0;
-  height: 100%;
-  font-family: Arial, sans-serif;
+  box-sizing: border-box;
 }
 
-#map {
+html, body, #map {
   height: 100%;
   width: 100%;
-  position: absolute;
-  top: 0;
-  left: 0;
+  font-family: sans-serif;
 }
 
-.controls {
+#center-btn, #dark-mode-toggle {
   position: absolute;
-  bottom: 10px;
-  left: 10px;
+  bottom: 80px;
   right: 10px;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  background: rgba(255, 255, 255, 0.9);
-  padding: 10px;
-  border-radius: 8px;
   z-index: 1000;
+  background: white;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 20px;
+  border: 1px solid #aaa;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
 }
 
-.controls input, .controls button {
-  flex: 1 1 45%;
-  padding: 8px;
-  font-size: 14px;
+#dark-mode-toggle {
+  bottom: 130px;
 }
