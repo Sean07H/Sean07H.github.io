@@ -1,42 +1,89 @@
 let map;
-function initMap() {
-  if ('geolocation' in navigator) {
-    navigator.geolocation.getCurrentPosition(position => {
-      const { latitude, longitude } = position.coords;
-      map = L.map('map').setView([latitude, longitude], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      }).addTo(map);
-      L.marker([latitude, longitude]).addTo(map).bindPopup("You are here").openPopup();
-    }, () => {
-      map = L.map('map').setView([40.7128, -74.006], 13);
-      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        maxZoom: 19
-      }).addTo(map);
-    });
-  }
+let userMarker;
+let watchId;
+let savedLocations = [];
+let isDark = false;
+
+const tileLight = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+const tileDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+
+function initMap(lat, lng) {
+  map = L.map('map').setView([lat, lng], 16);
+
+  L.tileLayer(tileLight, {
+    maxZoom: 19,
+  }).addTo(map);
+
+  userMarker = L.marker([lat, lng]).addTo(map)
+    .bindPopup("You are here").openPopup();
 }
 
-function centerMap() {
-  if (navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition(pos => {
+function centerMap(lat, lng) {
+  map.setView([lat, lng], 16);
+  userMarker.setLatLng([lat, lng]);
+}
+
+function speakDirections(text) {
+  const msg = new SpeechSynthesisUtterance(text);
+  msg.lang = 'en-US';
+  speechSynthesis.speak(msg);
+}
+
+function startTracking() {
+  watchId = navigator.geolocation.watchPosition(
+    pos => {
       const { latitude, longitude } = pos.coords;
-      map.setView([latitude, longitude], 13);
-    });
+      centerMap(latitude, longitude);
+    },
+    err => alert("Tracking failed: " + err.message),
+    { enableHighAccuracy: true }
+  );
+}
+
+function toggleDarkMode() {
+  isDark = !isDark;
+  map.eachLayer(layer => map.removeLayer(layer));
+  const tileLayer = L.tileLayer(isDark ? tileDark : tileLight, {
+    maxZoom: 19,
+  }).addTo(map);
+}
+
+function shakeToRecenter() {
+  let lastShake = Date.now();
+  window.addEventListener("devicemotion", event => {
+    const acc = event.accelerationIncludingGravity;
+    const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
+    if (magnitude > 20 && Date.now() - lastShake > 2000) {
+      navigator.geolocation.getCurrentPosition(pos => {
+        centerMap(pos.coords.latitude, pos.coords.longitude);
+      });
+      lastShake = Date.now();
+    }
+  });
+}
+
+// Init
+window.onload = () => {
+  if (!navigator.geolocation) {
+    alert("Geolocation not supported.");
+    return;
   }
-}
 
-function searchLocation() {
-  const query = document.getElementById("searchBox").value;
-  fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${query}`)
-    .then(res => res.json())
-    .then(data => {
-      if (data.length > 0) {
-        const { lat, lon } = data[0];
-        map.setView([lat, lon], 14);
-        L.marker([lat, lon]).addTo(map).bindPopup(query).openPopup();
-      }
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const { latitude, longitude } = pos.coords;
+      initMap(latitude, longitude);
+      startTracking();
+      shakeToRecenter();
+    },
+    err => alert("Location access denied.")
+  );
+
+  document.getElementById("center-btn").addEventListener("click", () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      centerMap(pos.coords.latitude, pos.coords.longitude);
     });
-}
+  });
 
-window.onload = initMap;
+  document.getElementById("dark-mode-toggle").addEventListener("click", toggleDarkMode);
+};
