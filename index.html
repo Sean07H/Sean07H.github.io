@@ -3,20 +3,34 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Mobile Maps App</title>
+  <title>My Mobile Map App</title>
   <link rel="stylesheet" href="styles.css" />
   <link
     rel="stylesheet"
     href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-o9N1j8Mk0a3Io+j3TUMpFv5xoLz+H4xU5lNNh1HXM8c="
+    crossorigin=""
   />
+  <style>
+    /* Minimal fallback if styles.css fails */
+    #map { height: 100vh; width: 100vw; }
+    button { z-index: 1000; position: fixed; }
+  </style>
 </head>
 <body>
   <div id="map"></div>
 
-  <button id="center-btn">📍</button>
-  <button id="dark-mode-toggle">🌓</button>
+  <!-- Center Button -->
+  <button id="center-btn" style="bottom: 80px; right: 10px;">📍 Center Map</button>
 
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Load Leaflet JS -->
+  <script
+    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-o9N1j8Mk0a3Io+j3TUMpFv5xoLz+H4xU5lNNh1HXM8c="
+    crossorigin=""
+  ></script>
+
+  <!-- Load App Logic -->
   <script src="app.js"></script>
 </body>
 </html>
