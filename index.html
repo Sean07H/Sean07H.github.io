@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mobile Maps App</title>
+  <link rel="stylesheet" href="styles.css" />
+  <link
+    rel="stylesheet"
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
+  />
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+</head>
+<body>
+  <div id="map"></div>
+  <div class="controls">
+    <input id="searchBox" type="text" placeholder="Search location" />
+    <button onclick="searchLocation()">Search</button>
+    <button onclick="centerMap()">📍 Center</button>
+    <button onclick="startTracking()">▶ Track</button>
+    <button onclick="stopTracking()">■ Stop</button>
+    <button onclick="enableCompass(map)">🧭 Compass</button>
+    <button onclick="shakeToRecenter()">Shake Mode</button>
+  </div>
+
+  <script src="js/app.js"></script>
+  <script src="js/phase2.js"></script>
+  <script src="js/phase3.js"></script>
+</body>
+</html>
