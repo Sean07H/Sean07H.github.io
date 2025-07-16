@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Custom Maps Website</title>
-  <!-- Load Mapbox GL JS -->
+  <!-- Load Leaflet.js (OpenStreetMap) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Load Mapbox GL JS (optional, as fallback) -->
   <script src="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.js"></script>
   <link href="https://api.mapbox.com/mapbox-gl-js/v3.7.0/mapbox-gl.css" rel="stylesheet">
-  <!-- Load Mapbox GL Directions plugin -->
-  <script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.js"></script>
-  <link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-directions/v4.3.1/mapbox-gl-directions.css" rel="stylesheet">
   <style>
     body, html {
       margin: 0;
@@ -19,11 +19,11 @@
     }
     #map {
       width: 100%;
-      height: 60%;
+      height: 50%;
     }
     #sidebar {
       width: 100%;
-      height: 40%;
+      height: 50%;
       overflow-y: auto;
       padding: 10px;
       box-sizing: border-box;
@@ -35,6 +35,7 @@
       padding: 8px;
       display: block;
       font-size: 16px;
+      box-sizing: border-box;
     }
     #quick-options {
       display: flex;
@@ -49,14 +50,15 @@
     }
     #results {
       margin-top: 10px;
+      font-size: 14px;
     }
-    /* Ensure responsiveness for mobile */
+    /* Mobile optimization */
     @media (max-width: 600px) {
       #map {
-        height: 50%;
+        height: 40%;
       }
       #sidebar {
-        height: 50%;
+        height: 60%;
       }
       #quick-options button {
         width: 48%;
@@ -79,53 +81,69 @@
       <button onclick="searchNearby('gas_station')">Gas Stations</button>
     </div>
     <button onclick="getCurrentLocation()">Center on Current Location</button>
-    <button onclick="toggleMapType('streets-v12')">Roadmap View</button>
-    <button onclick="toggleMapType('satellite-v9')">Satellite View</button>
+    <button onclick="toggleMapType('roadmap')">Roadmap View</button>
+    <button onclick="toggleMapType('satellite')">Satellite View</button>
     <button onclick="zoomToStreetLevel()">Street-Level Zoom</button>
     <div id="results"></div>
   </div>
 
   <script>
-    // Mapbox access token (public, for demo purposes only)
-    mapboxgl.accessToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB5xWOw';
+    // Try Mapbox first, fall back to Leaflet
+    let map, currentLocation, useMapbox = true;
+    const mapboxToken = 'pk.eyJ1IjoibWFwYm94IiwiYSI6ImNpejY4NXVycTA2emYycXBndHRqcmZ3N3gifQ.rJcFIG214AriISLbB5xWOw';
 
     // Initialize map
-    const map = new mapboxgl.Map({
-      container: 'map',
-      style: 'mapbox://styles/mapbox/streets-v12',
-      center: [-74.0060, 40.7128], // Default: New York
-      zoom: 12
-    });
+    function initMap() {
+      if (useMapbox && typeof mapboxgl !== 'undefined') {
+        try {
+          mapboxgl.accessToken = mapboxToken;
+          map = new mapboxgl.Map({
+            container: 'map',
+            style: 'mapbox://styles/mapbox/streets-v12',
+            center: [-74.0060, 40.7128], // New York
+            zoom: 12
+          });
+          map.addControl(new mapboxgl.NavigationControl());
+          map.addControl(new mapboxgl.GeolocateControl({
+            positionOptions: { enableHighAccuracy: true },
+            trackUserLocation: true,
+            showUserHeading: true
+          }).on('geolocate', (e) => {
+            currentLocation = [e.coords.longitude, e.coords.latitude];
+            new mapboxgl.Marker().setLngLat(currentLocation).addTo(map);
+          }));
+        } catch (e) {
+          console.error('Mapbox failed:', e);
+          useMapbox = false;
+          initLeaflet();
+        }
+      } else {
+        initLeaflet();
+      }
+    }
 
-    // Add navigation controls (zoom and rotation)
-    map.addControl(new mapboxgl.NavigationControl());
+    // Initialize Leaflet as fallback
+    function initLeaflet() {
+      map = L.map('map').setView([40.7128, -74.0060], 12);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+      }).addTo(map);
+      // Add geolocation
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            currentLocation = [position.coords.latitude, position.coords.longitude];
+            L.marker(currentLocation).addTo(map).bindPopup('Your Location').openPopup();
+            map.setView(currentLocation, 12);
+          },
+          () => alert('Location access denied. Please enable location services.')
+        );
+      }
+    }
 
-    // Add geolocation control to track user location
-    let currentLocation = null;
-    map.addControl(
-      new mapboxgl.GeolocateControl({
-        positionOptions: { enableHighAccuracy: true },
-        trackUserLocation: true,
-        showUserHeading: true
-      })
-        .on('geolocate', (e) => {
-          currentLocation = [e.coords.longitude, e.coords.latitude];
-          new mapboxgl.Marker().setLngLat(currentLocation).addTo(map);
-        })
-    );
-
-    // Add directions control
-    const directions = new MapboxDirections({
-      accessToken: mapboxgl.accessToken,
-      unit: 'metric',
-      profile: 'mapbox/driving',
-      controls: { inputs: false } // We'll use custom inputs
-    });
-    map.addControl(directions, 'top-left');
-
-    // Predefined places (replace with your coordinates)
+    // Predefined places
     const predefinedPlaces = {
-      'home': [-74.0060, 40.7128], // Example: New York
+      'home': [-74.0060, 40.7128], // Replace with your coordinates
       'school': [-73.935242, 40.730610],
       'secondary school': [-73.925242, 40.740610]
     };
@@ -133,112 +151,244 @@
     // Go to predefined place
     function goToPlace(type) {
       const coords = predefinedPlaces[type];
-      map.flyTo({ center: coords, zoom: 14 });
-      new mapboxgl.Marker()
-        .setLngLat(coords)
-        .setPopup(new mapboxgl.Popup().setText(type.charAt(0).toUpperCase() + type.slice(1)))
-        .addTo(map)
-        .togglePopup();
+      if (useMapbox) {
+        map.flyTo({ center: coords, zoom: 14 });
+        new mapboxgl.Marker()
+          .setLngLat(coords)
+          .setPopup(new mapboxgl.Popup().setText(type.charAt(0).toUpperCase() + type.slice(1)))
+          .addTo(map)
+          .togglePopup();
+      } else {
+        map.setView(coords, 14);
+        L.marker(coords)
+          .addTo(map)
+          .bindPopup(type.charAt(0).toUpperCase() + type.slice(1))
+          .openPopup();
+      }
     }
 
-    // Search for places using Mapbox Geocoding API
+    // Search places (using Mapbox Geocoding or Nominatim for Leaflet)
     function searchPlaces() {
       const query = document.getElementById('search-input').value;
-      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&proximity=${currentLocation ? currentLocation.join(',') : '-74.0060,40.7128'}`)
+      if (!query) {
+        alert('Please enter a search query.');
+        return;
+      }
+      if (useMapbox) {
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&proximity=${currentLocation ? currentLocation.join(',') : '-74.0060,40.7128'}`)
+          .then(response => response.json())
+          .then(data => {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            if (data.features && data.features.length > 0) {
+              data.features.forEach(feature => {
+                const placeDiv = document.createElement('div');
+                place petrol = `Directions to ${feature.place_name}`;
+                placeDiv.innerHTML = `${feature.place_name} <button onclick="showDirections([${feature.center}])">Directions</button>`;
+                resultsDiv.appendChild(placeDiv);
+                if (useMapbox) {
+                  new mapboxgl.Marker()
+                    .setLngLat(feature.center)
+                    .setPopup(new mapboxgl.Popup().setText(feature.place_name))
+                    .addTo(map)
+                    .togglePopup();
+                }
+              });
+              map.flyTo({ center: data.features[0].center, zoom: 14 });
+            } else {
+              resultsDiv.innerHTML = 'No results found.';
+            }
+          })
+          .catch(error => {
+            console.error('Search error:', error);
+            alert('Search failed. Trying OpenStreetMap...');
+            searchWithNominatim(query);
+          });
+      } else {
+        searchWithNominatim(query);
+      }
+    }
+
+    // Search with Nominatim (OpenStreetMap)
+    function searchWithNominatim(query) {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5`)
         .then(response => response.json())
         .then(data => {
           const resultsDiv = document.getElementById('results');
           resultsDiv.innerHTML = '';
-          data.features.forEach(feature => {
-            const placeDiv = document.createElement('div');
-            placeDiv.innerHTML = `${feature.place_name} <button onclick="showDirections([${feature.center}])">Directions</button>`;
-            resultsDiv.appendChild(placeDiv);
-            new mapboxgl.Marker()
-              .setLngLat(feature.center)
-              .setPopup(new mapboxgl.Popup().setText(feature.place_name))
-              .addTo(map)
-              .togglePopup();
-          });
-          if (data.features.length > 0) {
-            map.flyTo({ center: data.features[0].center, zoom: 14 });
+          if (data && data.length > 0) {
+            data.forEach(place => {
+              const coords = [parseFloat(place.lat), parseFloat(place.lon)];
+              const placeDiv = document.createElement('div');
+              placeDiv.innerHTML = `${place.display_name} <button onclick="showDirections([${coords}])">Directions</button>`;
+              resultsDiv.appendChild(placeDiv);
+              L.marker(coords)
+                .addTo(map)
+                .bindPopup(place.display_name)
+                .openPopup();
+            });
+            map.setView([data[0].lat, data[0].lon], 14);
+          } else {
+            resultsDiv.innerHTML = 'No results found.';
           }
         })
         .catch(error => {
-          alert('Error searching places: ' + error);
+          console.error('Nominatim error:', error);
+          alert('Search failed. Please check your internet connection and try again.');
         });
     }
 
-    // Search nearby places (fast food, restaurants, gas stations)
+    // Search nearby places
     function searchNearby(type) {
       if (!currentLocation) {
         alert('Please enable location to search nearby places.');
         return;
       }
       const query = type === 'fast_food' ? 'fast food' : type;
-      fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxgl.accessToken}&proximity=${currentLocation.join(',')}&type=poi`)
+      if (useMapbox) {
+        fetch(`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?access_token=${mapboxToken}&proximity=${currentLocation.join(',')}&type=poi`)
+          .then(response => response.json())
+          .then(data => {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = '';
+            if (data.features && data.features.length > 0) {
+              data.features.forEach(feature => {
+                const placeDiv = document.createElement('div');
+                placeDiv.innerHTML = `${feature.place_name} <button onclick="showDirections([${feature.center}])">Directions</button>`;
+                resultsDiv.appendChild(placeDiv);
+                if (useMapbox) {
+                  new mapboxgl.Marker()
+                    .setLngLat(feature.center)
+                    .setPopup(new mapboxgl.Popup().setText(feature.place_name))
+                    .addTo(map)
+                    .togglePopup();
+                }
+              });
+            } else {
+              resultsDiv.innerHTML = 'No nearby places found.';
+            }
+          })
+          .catch(error => {
+            console.error('Nearby search error:', error);
+            alert('Nearby search failed. Trying OpenStreetMap...');
+            searchNearbyWithNominatim(query);
+          });
+      } else {
+        searchNearbyWithNominatim(query);
+      }
+    }
+
+    // Nearby search with Nominatim
+    function searchNearbyWithNominatim(query) {
+      fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(query)}&format=json&limit=5&bounded=1&viewbox=${currentLocation[1]-0.05},${currentLocation[0]-0.05},${currentLocation[1]+0.05},${currentLocation[0]+0.05}`)
         .then(response => response.json())
         .then(data => {
           const resultsDiv = document.getElementById('results');
           resultsDiv.innerHTML = '';
-          data.features.forEach(feature => {
-            const placeDiv = document.createElement('div');
-            placeDiv.innerHTML = `${feature.place_name} <button onclick="showDirections([${feature.center}])">Directions</button>`;
-            resultsDiv.appendChild(placeDiv);
-            new mapboxgl.Marker()
-              .setLngLat(feature.center)
-              .setPopup(new mapboxgl.Popup().setText(feature.place_name))
-              .addTo(map)
-              .togglePopup();
-          });
+          if (data && data.length > 0) {
+            data.forEach(place => {
+              const coords = [parseFloat(place.lat), parseFloat(place.lon)];
+              const placeDiv = document.createElement('div');
+              placeDiv.innerHTML = `${place.display_name} <button onclick="showDirections([${coords}])">Directions</button>`;
+              resultsDiv.appendChild(placeDiv);
+              L.marker(coords)
+                .addTo(map)
+                .bindPopup(place.display_name)
+                .openPopup();
+            });
+          } else {
+            resultsDiv.innerHTML = 'No nearby places found.';
+          }
         })
         .catch(error => {
-          alert('Error searching nearby places: ' + error);
+          console.error('Nominatim nearby error:', error);
+          alert('Nearby search failed. Please check your internet connection.');
         });
     }
 
-    // Show directions and ETA
+    // Show directions and ETA (using Mapbox Directions or simple Leaflet path)
     function showDirections(destination) {
       if (!currentLocation) {
         alert('Please enable location to get directions.');
         return;
       }
-      directions.setOrigin(currentLocation);
-      directions.setDestination(destination);
-      directions.on('route', (e) => {
-        const route = e.route[0];
-        const resultsDiv = document.getElementById('results');
-        resultsDiv.innerHTML = `ETA: ${Math.round(route.duration / 60)} minutes, Distance: ${(route.distance / 1000).toFixed(2)} km`;
-      });
+      if (useMapbox) {
+        const directions = new MapboxDirections({
+          accessToken: mapboxToken,
+          unit: 'metric',
+          profile: 'mapbox/driving',
+          controls: { inputs: false }
+        });
+        map.addControl(directions);
+        directions.setOrigin(currentLocation);
+        directions.setDestination(destination);
+        directions.on('route', (e) => {
+          const route = e.route[0];
+          document.getElementById('results').innerHTML = `ETA: ${Math.round(route.duration / 60)} minutes, Distance: ${(route.distance / 1000).toFixed(2)} km`;
+        });
+      } else {
+        // Simple Leaflet polyline (no ETA, as Nominatim doesn't provide routing)
+        const route = [currentLocation, destination];
+        L.polyline(route, { color: 'blue' }).addTo(map);
+        map.fitBounds(route);
+        document.getElementById('results').innerHTML = 'Route drawn (ETA not available with OpenStreetMap).';
+      }
     }
 
     // Center on current location
     function getCurrentLocation() {
       if (currentLocation) {
-        map.flyTo({ center: currentLocation, zoom: 14 });
+        if (useMapbox) {
+          map.flyTo({ center: currentLocation, zoom: 14 });
+        } else {
+          map.setView(currentLocation, 14);
+        }
       } else {
         alert('Location not available. Please enable location services.');
       }
     }
 
-    // Toggle map style (roadmap or satellite)
-    function toggleMapType(style) {
-      map.setStyle(`mapbox://styles/mapbox/${style}`);
-      // Re-add markers and directions after style change
-      map.on('styledata', () => {
-        if (currentLocation) {
-          new mapboxgl.Marker().setLngLat(currentLocation).addTo(map);
-        }
-      });
-    }
-
-    // Simulate street-level zoom (Mapbox doesn't have Street View)
-    function zoomToStreetLevel() {
-      if (currentLocation) {
-        map.flyTo({ center: currentLocation, zoom: 18 });
+    // Toggle map type
+    function toggleMapType(type) {
+      if (useMapbox) {
+        map.setStyle(`mapbox://styles/mapbox/${type === 'roadmap' ? 'streets-v12' : 'satellite-v9'}`);
+        map.on('styledata', () => {
+          if (currentLocation) {
+            new mapboxgl.Marker().setLngLat(currentLocation).addTo(map);
+          }
+        });
       } else {
-        map.setZoom(18);
+        const tileUrl = type === 'roadmap'
+          ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+          : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+        map.eachLayer(layer => {
+          if (layer instanceof L.TileLayer) map.removeLayer(layer);
+        });
+        L.tileLayer(tileUrl, {
+          attribution: type === 'roadmap' ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>' : '&copy; Esri'
+        }).addTo(map);
       }
     }
+
+    // Street-level zoom
+    function zoomToStreetLevel() {
+      if (currentLocation) {
+        if (useMapbox) {
+          map.flyTo({ center: currentLocation, zoom: 18 });
+        } else {
+          map.setView(currentLocation, 18);
+        }
+      } else {
+        if (useMapbox) {
+          map.setZoom(18);
+        } else {
+          map.setZoom(18);
+        }
+      }
+    }
+
+    // Initialize map on load
+    initMap();
   </script>
 </body>
 </html>
