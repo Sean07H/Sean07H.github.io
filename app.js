@@ -1,8 +1,8 @@
 let map;
 let userMarker;
 let watchId;
-let savedLocations = [];
 let isDark = false;
+let lastCoords = null;
 
 const tileLight = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
 const tileDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
@@ -20,7 +20,6 @@ function initMap(lat, lng) {
 
 function centerMap(lat, lng) {
   map.setView([lat, lng], 16);
-  userMarker.setLatLng([lat, lng]);
 }
 
 function speakDirections(text) {
@@ -33,7 +32,9 @@ function startTracking() {
   watchId = navigator.geolocation.watchPosition(
     pos => {
       const { latitude, longitude } = pos.coords;
-      centerMap(latitude, longitude);
+      lastCoords = { latitude, longitude };
+      userMarker.setLatLng([latitude, longitude]);
+      // No auto recenter — keeps user in control
     },
     err => alert("Tracking failed: " + err.message),
     { enableHighAccuracy: true }
@@ -54,9 +55,9 @@ function shakeToRecenter() {
     const acc = event.accelerationIncludingGravity;
     const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
     if (magnitude > 20 && Date.now() - lastShake > 2000) {
-      navigator.geolocation.getCurrentPosition(pos => {
-        centerMap(pos.coords.latitude, pos.coords.longitude);
-      });
+      if (lastCoords) {
+        centerMap(lastCoords.latitude, lastCoords.longitude);
+      }
       lastShake = Date.now();
     }
   });
@@ -80,9 +81,9 @@ window.onload = () => {
   );
 
   document.getElementById("center-btn").addEventListener("click", () => {
-    navigator.geolocation.getCurrentPosition(pos => {
-      centerMap(pos.coords.latitude, pos.coords.longitude);
-    });
+    if (lastCoords) {
+      centerMap(lastCoords.latitude, lastCoords.longitude);
+    }
   });
 
   document.getElementById("dark-mode-toggle").addEventListener("click", toggleDarkMode);
