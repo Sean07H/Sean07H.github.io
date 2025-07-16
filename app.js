@@ -1,90 +1,52 @@
 let map;
 let userMarker;
-let watchId;
-let isDark = false;
-let lastCoords = null;
+let pinMarker;
 
-const tileLight = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
-const tileDark = 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png';
+// Initialize the map
+function initMap() {
+  map = L.map('map').setView([40.7128, -74.0060], 13); // Default to NYC
 
-function initMap(lat, lng) {
-  map = L.map('map').setView([lat, lng], 16);
-
-  L.tileLayer(tileLight, {
+  // Tile Layer (Map styling)
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     maxZoom: 19,
   }).addTo(map);
 
-  userMarker = L.marker([lat, lng]).addTo(map)
-    .bindPopup("You are here").openPopup();
-}
+  // Add current location marker (but don’t center)
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const coords = [pos.coords.latitude, pos.coords.longitude];
+    userMarker = L.marker(coords).addTo(map).bindPopup("You are here");
+  });
 
-function centerMap(lat, lng) {
-  map.setView([lat, lng], 16);
-}
+  // Setup button click to center on current location
+  document.getElementById('center-btn').addEventListener('click', () => {
+    navigator.geolocation.getCurrentPosition((pos) => {
+      const coords = [pos.coords.latitude, pos.coords.longitude];
+      map.setView(coords, 16);
+    });
+  });
 
-function speakDirections(text) {
-  const msg = new SpeechSynthesisUtterance(text);
-  msg.lang = 'en-US';
-  speechSynthesis.speak(msg);
-}
+  // Double-tap to drop a pin
+  let lastTap = 0;
+  map.on('click', function (e) {
+    const currentTime = new Date().getTime();
+    const tapGap = currentTime - lastTap;
 
-function startTracking() {
-  watchId = navigator.geolocation.watchPosition(
-    pos => {
-      const { latitude, longitude } = pos.coords;
-      lastCoords = { latitude, longitude };
-      userMarker.setLatLng([latitude, longitude]);
-      // No auto recenter — keeps user in control
-    },
-    err => alert("Tracking failed: " + err.message),
-    { enableHighAccuracy: true }
-  );
-}
+    if (tapGap < 300 && tapGap > 0) {
+      if (pinMarker) map.removeLayer(pinMarker);
+      const latlng = e.latlng;
 
-function toggleDarkMode() {
-  isDark = !isDark;
-  map.eachLayer(layer => map.removeLayer(layer));
-  const tileLayer = L.tileLayer(isDark ? tileDark : tileLight, {
-    maxZoom: 19,
-  }).addTo(map);
-}
-
-function shakeToRecenter() {
-  let lastShake = Date.now();
-  window.addEventListener("devicemotion", event => {
-    const acc = event.accelerationIncludingGravity;
-    const magnitude = Math.sqrt(acc.x**2 + acc.y**2 + acc.z**2);
-    if (magnitude > 20 && Date.now() - lastShake > 2000) {
-      if (lastCoords) {
-        centerMap(lastCoords.latitude, lastCoords.longitude);
-      }
-      lastShake = Date.now();
+      pinMarker = L.marker(latlng).addTo(map)
+        .bindPopup(`<b>Pinned location</b><br><button onclick="getDirections(${latlng.lat}, ${latlng.lng})">Get Directions</button>`)
+        .openPopup();
     }
+
+    lastTap = currentTime;
   });
 }
 
-// Init
-window.onload = () => {
-  if (!navigator.geolocation) {
-    alert("Geolocation not supported.");
-    return;
-  }
+// Function to simulate getting directions
+function getDirections(lat, lng) {
+  alert(`Directions to: ${lat.toFixed(5)}, ${lng.toFixed(5)} (Integrate routing here)`);
+}
 
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      const { latitude, longitude } = pos.coords;
-      initMap(latitude, longitude);
-      startTracking();
-      shakeToRecenter();
-    },
-    err => alert("Location access denied.")
-  );
-
-  document.getElementById("center-btn").addEventListener("click", () => {
-    if (lastCoords) {
-      centerMap(lastCoords.latitude, lastCoords.longitude);
-    }
-  });
-
-  document.getElementById("dark-mode-toggle").addEventListener("click", toggleDarkMode);
-};
+window.onload = initMap;
