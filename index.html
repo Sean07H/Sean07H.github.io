@@ -1,55 +1,64 @@
-<<!DOCTYPE html> <!-- 1 -->
+<!DOCTYPE html> <!-- 1 -->
 <html lang="en"> <!-- 2 -->
 <head> <!-- 3 -->
   <meta charset="UTF-8"> <!-- 4 -->
   <meta name="viewport" content="width=device-width,initial-scale=1"> <!-- 5 -->
-  <title>Modern MapApp with Waypoints</title> <!-- 6 -->
+  <title>Google‑Style Modern MapApp</title> <!-- 6 -->
   <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet"> <!-- 7 -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"> <!-- 8 -->
-  <style> /* 9–70 */
+  <style> /* 9–80 */
     body,html{height:100%;margin:0;padding:0;font-family:'Roboto',sans-serif;}
     #map{position:absolute;top:0;bottom:0;width:100%;z-index:0;}
-    .search-bar{position:absolute;top:12px;left:50%;transform:translateX(-50%);
-      width:90%;max-width:500px;background:#fff;padding:10px 14px;border-radius:24px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:1000;}
+    .search-bar{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:90%;max-width:500px;
+      background:#fff;padding:10px 14px;border-radius:24px;box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:1000;}
     .search-bar input{width:100%;border:none;font-size:16px;padding:6px;}
     .chip-bar{position:absolute;top:72px;left:50%;transform:translateX(-50%);
       display:flex;gap:8px;z-index:1000;width:90%;max-width:500px;overflow-x:auto;}
     .chip{padding:6px 12px;background:#fff;border-radius:20px;font-size:14px;
-          color:#333;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);white-space:nowrap;}
+      color:#333;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);white-space:nowrap;}
     .chip.active{background:#4285f4;color:#fff;}
     .chip:hover{background:#f1f1f1;}
     .control-fab{position:absolute;bottom:80px;right:20px;display:flex;flex-direction:column;gap:12px;z-index:1000;}
     .fab{width:48px;height:48px;background:#4285f4;color:#fff;border-radius:24px;
-         display:flex;align-items:center;justify-content:center;font-size:20px;
-         box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;}
+      display:flex;align-items:center;justify-content:center;font-size:20px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;}
     .fab:hover{background:#3367d6;}
     #directions{position:absolute;bottom:0;width:100%;max-height:140px;
-                background:rgba(255,255,255,0.9);padding:12px;font-size:14px;
-                overflow-y:auto;box-shadow:0 -2px 6px rgba(0,0,0,0.25);z-index:500;}
-    .autocomplete-items{position:absolute;background:#fff;z-index:10000;border:1px solid #ccc;border-radius:4px;width:calc(100% - 32px);}
-    .autocomplete-items div{padding:8px;cursor:pointer;}
-    .autocomplete-active{background:#ececec;}
-    .settings-wp{position:absolute;bottom:160px;left:20px;z-index:1000;background:#fff;
-      padding:8px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
-  </style> <!-- 70 -->
-</head> <!-- 71 -->
-<body> <!-- 72 -->
+      background:rgba(255,255,255,0.9);padding:12px;font-size:14px;
+      overflow-y:auto;box-shadow:0 -2px 6px rgba(0,0,0,0.25);z-index:500;}
+    .autocomplete-items{display:none;}
+    .results-list{position:absolute;top:72px;left:50%;transform:translateX(-50%);
+      width:90%;max-width:500px;max-height:200px;overflow-y:auto;
+      background:rgba(255,255,255,0.95);border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:1000;}
+    .results-item{padding:8px 12px;border-bottom:1px solid #ddd;}
+    .results-item:last-child{border-bottom:none;}
+    .results-item button{margin-right:8px;padding:4px 8px;font-size:14px;border:none;border-radius:4px;cursor:pointer;}
+    .results-item button.directions{background:#4285f4;color:#fff;}
+    .results-item button.details{background:#aaa;color:#fff;}
+    .settings-panel{position:absolute;bottom:220px;left:20px;z-index:1000;background:#fff;
+      padding:12px;border-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,0.3);}
+    .settings-panel label{display:block;font-size:14px;margin-bottom:8px;}
+    .settings-panel select, .settings-panel input{margin-left:8px;}
+  </style> <!-- 80 -->
+</head> <!-- 81 -->
+<body> <!-- 82 -->
 
-  <div id="map"></div> <!-- 73 -->
+  <div id="map"></div> <!-- 83 -->
 
-  <div class="search-bar"> <!-- 74 -->
+  <div class="search-bar"> <!-- 84 -->
     <input id="search" placeholder="Search nearby...">
-  </div> <!-- 75 -->
+  </div> <!-- 85 -->
 
-  <div class="chip-bar"> <!-- 76 -->
+  <div class="chip-bar"> <!-- 86 -->
     <div class="chip active" data-type="">All</div>
     <div class="chip" data-type="restaurant">Restaurants</div>
     <div class="chip" data-type="cafe">Coffee</div>
     <div class="chip" data-type="gas_station">Gas</div>
-  </div> <!-- 80 -->
+  </div> <!-- 90 -->
 
-  <div class="settings-wp"> <!-- 81 -->
+  <div class="results-list" id="resultsList"></div> <!-- 91 -->
+
+  <div class="settings-panel"> <!-- 92 -->
     <label>Waypoint mode:
       <select id="wpMode">
         <option value="click">Click</option>
@@ -57,153 +66,207 @@
         <option value="hold">Hold-to-add</option>
       </select>
     </label>
-  </div> <!-- 88 -->
+    <label><input type="checkbox" id="largeText"> Large text mode</label>
+    <label><input type="checkbox" id="highContrast"> High contrast mode</label>
+  </div> <!-- 98 -->
 
-  <div class="control-fab"> <!-- 89 -->
+  <div class="control-fab"> <!-- 99 -->
     <div class="fab" id="routeFab">⇨</div>
     <div class="fab" id="simulateFab">🚗</div>
     <div class="fab" id="trafficFab">🚦</div>
-  </div> <!-- 93 -->
+  </div> <!-- 103 -->
 
-  <div id="directions"></div> <!-- 94 -->
+  <div id="directions"></div> <!-- 104 -->
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- 95 -->
-  <script> /* logic lines 96–260 */
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- 105 -->
+  <script> /* logic lines 106–280 */
     const map = L.map('map').setView([0,0],14);
     const maptilerKey = "evu6UnrC9Rogt8JtpljW";
     const openRouteKey = "YOUR_OPENROUTE_KEY";
-    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`, { attribution:'© MapTiler © OSM' }).addTo(map);
+    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`, {
+      attribution:'© MapTiler © OSM'
+    }).addTo(map);
 
-    let userLoc=null, searchMarker=null, routeLayer=null, simMarker=null, trafficLayer=null;
-    let routeCoords=[], waypoints=[], waypointMarkers=[];
-    let currentType="", wpMode="click";
+    let userLoc = null, searchMarker = null, routeLayer = null, simMarker = null, trafficLayer = null;
+    let routeCoords = [], waypoints = [], waypointMarkers = [];
+    let currentType = "", wpMode = 'click';
 
-    navigator.geolocation.getCurrentPosition(p=>{
-      userLoc=[p.coords.latitude,p.coords.longitude];
+    navigator.geolocation.getCurrentPosition(p => {
+      userLoc = [p.coords.latitude, p.coords.longitude];
       map.setView(userLoc,14);
     });
 
-    document.querySelectorAll('.chip').forEach(chip=>{
-      chip.addEventListener('click',()=> {
+    document.querySelectorAll('.chip').forEach(chip => {
+      chip.addEventListener('click', () => {
         document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
         chip.classList.add('active');
         currentType = chip.dataset.type;
       });
     });
 
-    function attachAutocomplete(input){
-      let focus=-1;
-      input.addEventListener('input', async function(){
-        const q=this.value; if(!q){ clear(); return;}
-        const center = userLoc || map.getCenter();
-        const vb = `${center[1]-0.05},${center[0]+0.05},${center[1]+0.05},${center[0]-0.05}`;
-        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${currentType?` ${currentType}`:''}&limit=5&viewbox=${vb}&bounded=1`;
-        const resp = await fetch(url), data=await resp.json(); clear();
-        const list = document.createElement('div'); list.className='autocomplete-items';
-        this.parentNode.appendChild(list);
-        data.forEach(p=>{
-          const item = document.createElement('div');
-          item.textContent = p.display_name;
-          item.addEventListener('click', ()=>{
-            clear();
-            const ll=[parseFloat(p.lat),parseFloat(p.lon)];
-            searchMarker && map.removeLayer(searchMarker);
-            searchMarker = L.marker(ll).addTo(map).bindPopup(p.display_name).openPopup();
-            map.setView(ll,16);
-          });
-          list.appendChild(item);
-        });
+    const resultsList = document.getElementById('resultsList');
+    async function onSearch(q) {
+      if (!q) { resultsList.innerHTML=''; return; }
+      const center = userLoc || map.getCenter();
+      const vb = `${center[1]-0.05},${center[0]+0.05},${center[1]+0.05},${center[0]-0.05}`;
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${currentType?` ${currentType}`:''}&limit=10&viewbox=${vb}&bounded=1`);
+      const data = await resp.json();
+      resultsList.innerHTML = '';
+      const byDist = data.map(p => {
+        const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
+        return {p, dist: map.distance([lat, lon], center)};
+      }).sort((a,b)=>a.dist-b.dist);
+      byDist.forEach(({p, dist}) => {
+        const item = document.createElement('div');
+        item.className = 'results-item';
+        const title = document.createElement('div');
+        title.textContent = `${p.display_name} (${(dist/1000).toFixed(2)} km)`;
+        title.style.fontWeight = '500';
+        item.appendChild(title);
+
+        const btnDir = document.createElement('button');
+        btnDir.textContent = 'Directions';
+        btnDir.className = 'directions';
+        btnDir.onclick = () => {
+          resultsList.innerHTML = '';
+          const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
+          map.setView([lat, lon],16);
+          if (searchMarker) map.removeLayer(searchMarker);
+          searchMarker = L.marker([lat, lon]).addTo(map).bindPopup(p.display_name).openPopup();
+          calculateRouteTo([lat, lon]);
+        };
+        item.appendChild(btnDir);
+
+        const btnDet = document.createElement('button');
+        btnDet.textContent = 'Details';
+        btnDet.className = 'details';
+        btnDet.onclick = () => {
+          alert(`Details coming soon for:\n${p.display_name}`);
+        };
+        item.appendChild(btnDet);
+
+        resultsList.appendChild(item);
       });
-      input.addEventListener('keydown', e=>{
-        const items=document.querySelectorAll('.autocomplete-items div');
-        if(!items.length) return;
-        items.forEach(i=>i.classList.remove('autocomplete-active'));
-        if(e.key==='ArrowDown') focus=(focus+1)%items.length;
-        else if(e.key==='ArrowUp') focus=(focus-1+items.length)%items.length;
-        else if(e.key==='Enter' && focus>=0){ items[focus].click(); e.preventDefault();}
-        items[focus]?.classList.add('autocomplete-active');
-      });
-      document.addEventListener('click', clear);
-      function clear(){ document.querySelectorAll('.autocomplete-items').forEach(el=>el.remove()); focus=-1;}
     }
 
-    attachAutocomplete(document.getElementById('search'));
+    document.getElementById('search').addEventListener('input', e => onSearch(e.target.value));
+    document.getElementById('search').addEventListener('focus', () => onSearch(document.getElementById('search').value));
 
-    document.getElementById('wpMode').addEventListener('change', e=> {
+    document.getElementById('wpMode').addEventListener('change', e => {
       wpMode = e.target.value;
       setWpListeners();
     });
 
     function addWaypoint(e) {
-      const ll=[e.latlng.lat, e.latlng.lng];
-      const marker = L.marker(ll).addTo(map).bindPopup(`Waypoint ${waypoints.length+1}`).openPopup();
-      marker.on('click', ()=>{
+      if (waypoints.length >= 2) return;
+      const ll = [e.lat, e.lng] || [e.latlng.lat, e.latlng.lng];
+      waypoints.push(ll);
+      const idx = waypoints.length;
+      const color = idx === 1 ? '#4285f4' : '#34a853';
+      const marker = L.marker(ll, {
+        icon: L.divIcon({
+          html: `<div style="background:${color};color:#fff;border-radius:50%;
+            width:24px;height:24px;line-height:24px;text-align:center;">${idx}</div>`,
+          iconSize:[24,24]
+        })
+      }).addTo(map);
+      marker.on('click', () => {
         map.removeLayer(marker);
-        const idx = waypointMarkers.indexOf(marker);
-        waypointMarkers.splice(idx,1);
-        waypoints.splice(idx,1);
-        waypointMarkers.forEach((m,i)=>m.bindPopup(`Waypoint ${i+1}`));
+        const id = waypointMarkers.indexOf(marker);
+        waypointMarkers.splice(id, 1);
+        waypoints.splice(id, 1);
+        waypointMarkers.forEach((m,i)=>m.setIcon(L.divIcon({
+          html: `<div style="background:${i===0?'#4285f4':'#34a853'};color:#fff;border-radius:50%;
+            width:24px;height:24px;line-height:24px;text-align:center;">${i+1}</div>`,
+          iconSize:[24,24]
+        })));
+        if (waypoints.length === 2) calculateRoute();
       });
       waypointMarkers.push(marker);
-      waypoints.push(ll);
+      if (waypoints.length === 2) calculateRoute();
     }
 
     function setWpListeners() {
       map.off('click dblclick mousedown');
-      if (wpMode==='click') map.on('click', addWaypoint);
-      else if (wpMode==='double') map.on('dblclick', addWaypoint);
-      else if (wpMode==='hold') {
-        map.on('mousedown', e=>{
-          const t=Date.now();
-          map.once('mouseup', up=>{
-            if(Date.now()-t>600) addWaypoint(up);
+      if (wpMode === 'click') map.on('click', addWaypoint);
+      else if (wpMode === 'double') map.on('dblclick', addWaypoint);
+      else if (wpMode === 'hold') {
+        map.on('mousedown', e => {
+          const t = Date.now();
+          map.once('mouseup', up => {
+            if (Date.now() - t > 600) addWaypoint(up);
           });
         });
       }
     }
-
     setWpListeners();
 
-    async function calculateRoute(){
-      if(!userLoc) return alert('Unable to get your location');
-      if(!searchMarker) return alert('Select destination via search');
-      const sLat=userLoc[0], sLon=userLoc[1];
-      const eLat = searchMarker.getLatLng().lat, eLon = searchMarker.getLatLng().lng;
-      const coords=[[+sLon,+sLat], ...waypoints.map(w=>[w[1],w[0]]), [+eLon,+eLat]];
-      const res=await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
+    async function calculateRoute() {
+      if (!userLoc || waypoints.length < 2) return;
+      const coords = [
+        [+userLoc[1], +userLoc[0]],
+        [waypoints[0][1], waypoints[0][0]],
+        waypoints.length === 2 && [waypoints[1][1], waypoints[1][0]]
+      ].filter(Boolean);
+      const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
         method:'POST', headers:{Authorization: openRouteKey, 'Content-Type':'application/json'},
-        body: JSON.stringify({coordinates: coords})
+        body: JSON.stringify({ coordinates: coords })
       });
       const geo = await res.json();
       routeLayer && map.removeLayer(routeLayer);
-      routeLayer = L.geoJSON(geo,{style:{color:'#4285f4', weight:5}}).addTo(map);
+      routeLayer = L.geoJSON(geo, { style:{ color:'#4285f4', weight:5 } }).addTo(map);
       map.fitBounds(routeLayer.getBounds());
-      routeCoords = geo.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
       const steps = geo.features[0].properties.segments.flatMap(s=>s.steps);
-      document.getElementById('directions').innerHTML = steps.map((st,i)=>`<p>${i+1}. ${st.instruction}</p>`).join('');
+      document.getElementById('directions').innerHTML = steps.map((st,i)=>
+        `<p>${i+1}. ${st.instruction}</p>`).join('');
+      routeCoords = geo.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+    }
+
+    async function calculateRouteTo(dest) {
+      if (!userLoc) return alert('No location');
+      const coords = [[+userLoc[1],+userLoc[0]],[+dest[1],+dest[0]]];
+      const res = await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson', {
+        method:'POST', headers:{Authorization: openRouteKey, 'Content-Type':'application/json'},
+        body: JSON.stringify({ coordinates: coords })
+      });
+      const geo = await res.json();
+      routeLayer && map.removeLayer(routeLayer);
+      routeLayer = L.geoJSON(geo, { style:{ color:'#4285f4', weight:5 } }).addTo(map);
+      map.fitBounds(routeLayer.getBounds());
+      const steps = geo.features[0].properties.segments.flatMap(s=>s.steps);
+      document.getElementById('directions').innerHTML = steps.map((st,i)=>
+        `<p>${i+1}. ${st.instruction}</p>`).join('');
     }
 
     document.getElementById('routeFab').addEventListener('click', calculateRoute);
-
-    document.getElementById('simulateFab').addEventListener('click', ()=>{
-      if(!routeCoords.length) return alert('Generate route first');
+    document.getElementById('simulateFab').addEventListener('click', () => {
+      if (!routeCoords.length) return alert('Generate route first');
       simMarker && map.removeLayer(simMarker);
       simMarker = L.marker(routeCoords[0]).addTo(map);
-      let i=0; const iv = setInterval(()=>{
-        if(i>=routeCoords.length){ clearInterval(iv); return; }
+      let i = 0;
+      const iv = setInterval(() => {
+        if (i >= routeCoords.length) { clearInterval(iv); return; }
         simMarker.setLatLng(routeCoords[i]); i++;
-      },200);
+      }, 200);
     });
-
-    document.getElementById('trafficFab').addEventListener('click', ()=>{
-      if(!trafficLayer){
-        trafficLayer = L.tileLayer(`https://api.maptiler.com/tiles/traffic/256/{z}/{x}/{y}.png?key=${maptilerKey}`, {attribution:'Traffic © MapTiler', opacity:0.7});
-        map.addLayer(trafficLayer);
+    document.getElementById('trafficFab').addEventListener('click', () => {
+      if (!trafficLayer) {
+        trafficLayer = L.tileLayer(`https://api.maptiler.com/tiles/traffic/256/{z}/{x}/{y}.png?key=${maptilerKey}`, {
+          attribution: 'Traffic © MapTiler', opacity: 0.7
+        }).addTo(map);
       } else {
-        map.removeLayer(trafficLayer); trafficLayer=null;
+        map.removeLayer(trafficLayer);
+        trafficLayer = null;
       }
     });
 
-  </script> <!-- 260 -->
+    // accessibility toggles
+    document.getElementById('largeText').addEventListener('change', e => {
+      document.body.style.fontSize = e.target.checked ? '1.2em' : '';
+    });
+    document.getElementById('highContrast').addEventListener('change', e => {
+      document.body.style.filter = e.target.checked ? 'contrast(1.5)' : '';
+    });
+  </script> <!-- ~280 -->
 </body>
 </html>
