@@ -1,68 +1,68 @@
-<!DOCTYPE html> <!-- 1 -->
-<html lang="en"> <!-- 2 -->
-<head> <!-- 3 -->
-  <meta charset="UTF-8"><!--4-->
-  <meta name="viewport" content="width=device-width,initial-scale=1"><!--5-->
-  <title>MapApp with Tabbed UI</title><!--6-->
-  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet"><!--7-->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"><!--8-->
-  <style> /* 9–90 */
-    body,html{height:100%;margin:0;padding:0;font-family:'Roboto',sans-serif;}
-    #map{position:absolute;top:0;bottom:0;width:100%;z-index:0;}
-    .search-bar{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:90%;max-width:500px;
-      background:#fff;padding:10px 14px;border-radius:24px;box-shadow:0 2px 6px rgba(0,0,0,0.25);z-index:1001;}
-    .search-bar input{width:100%;border:none;font-size:16px;padding:6px;}
-    .chip-bar{position:absolute;top:72px;left:50%;transform:translateX(-50%);
-      display:flex;gap:8px;width:90%;max-width:500px;overflow-x:auto;z-index:1001;}
-    .chip{padding:6px 12px;background:#fff;border-radius:20px;font-size:14px;
-      color:#333;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.2);}
-    .chip.active{background:#4285f4;color:#fff;}
-    .chip:hover{background:#f1f1f1;}
-    .control-fab{position:absolute;bottom:120px;right:20px;display:flex;flex-direction:column;gap:12px;z-index:1001;}
-    .fab{width:48px;height:48px;background:#4285f4;color:#fff;border-radius:24px;
-      display:flex;align-items:center;justify-content:center;font-size:20px;
-      box-shadow:0 2px 6px rgba(0,0,0,0.3);cursor:pointer;}
-    .fab:hover{background:#3367d6;}
-    #directions{position:absolute;bottom:60px;width:100%;max-height:140px;
-      background:rgba(255,255,255,0.9);padding:12px;font-size:14px;
-      overflow-y:auto;box-shadow:0 -2px 6px rgba(0,0,0,0.25);z-index:1000;}
-    .results-list{position:absolute;top:72px;left:50%;transform:translateX(-50%);
-      width:90%;max-width:500px;max-height:200px;overflow-y:auto;
-      background:rgba(255,255,255,0.95);border-radius:4px;box-shadow:0 2px 4px rgba(0,0,0,0.2);z-index:1002;}
-    .results-item{padding:8px 12px;border-bottom:1px solid #ddd;}
-    .results-item:last-child{border-bottom:none;}
-    .results-item button{margin-right:8px;padding:4px 8px;font-size:14px;border:none;border-radius:4px;cursor:pointer;}
-    .results-item button.directions{background:#4285f4;color:#fff;}
-    .results-item button.details{background:#aaa;color:#fff;}
-    .settings-panel{display:none;position:absolute;top:80px;left:50%;transform:translateX(-50%);
-      width:90%;max-width:350px;background:#fff;padding:16px;border-radius:12px;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:1001;}
-    .settings-panel.active{display:block;}
-    .settings-panel label{display:block;font-size:14px;margin-bottom:8px;}
-    .settings-panel select, .settings-panel input{margin-left:8px;}
-    .tab-bar{position:absolute;bottom:12px;left:50%;transform:translateX(-50%);z-index:1003;
-      background:rgba(255,255,255,0.95);border-radius:24px;display:flex;box-shadow:0 2px 6px rgba(0,0,0,0.3);}
-    .tab-btn{padding:8px 24px;font-size:14px;color:#555;cursor:pointer;border:none;background:none;border-radius:24px;}
-    .tab-btn.active{background:#4285f4;color:#fff;}
-  </style> /* 90 */
-</head> <!-- 91 -->
-<body> <!-- 92 -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>MapApp with Settings Tab</title>
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
+  <style>
+    body, html { height:100%; margin:0; padding:0; font-family:'Roboto', sans-serif; }
+    #map { position:absolute; top:0; bottom:0; width:100%; z-index:0; }
+    .search-bar { position:absolute; top:12px; left:50%; transform:translateX(-50%); width:90%; max-width:500px;
+      background:#fff; padding:10px 14px; border-radius:24px; box-shadow:0 2px 6px rgba(0,0,0,0.25); z-index:1001; }
+    .search-bar input { width:100%; border:none; font-size:16px; padding:6px; }
+    .chip-bar { position:absolute; top:72px; left:50%; transform:translateX(-50%);
+      display:flex; gap:8px; width:90%; max-width:500px; overflow-x:auto; z-index:1001; }
+    .chip { padding:6px 12px; background:#fff; border-radius:20px; font-size:14px;
+      color:#333; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,0.2); white-space:nowrap; }
+    .chip.active { background:#4285f4; color:#fff; }
+    .chip:hover { background:#f1f1f1; }
+    .control-fab { position:absolute; bottom:120px; right:20px; display:flex; flex-direction:column; gap:12px; z-index:1001; }
+    .fab { width:48px; height:48px; background:#4285f4; color:#fff; border-radius:24px;
+      display:flex; align-items:center; justify-content:center; font-size:20px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3); cursor:pointer; }
+    .fab:hover { background:#3367d6; }
+    #directions { position:absolute; bottom:60px; width:100%; max-height:140px;
+      background:rgba(255,255,255,0.9); padding:12px; font-size:14px;
+      overflow-y:auto; box-shadow:0 -2px 6px rgba(0,0,0,0.25); z-index:1000; }
+    .results-list { position:absolute; top:72px; left:50%; transform:translateX(-50%);
+      width:90%; max-width:500px; max-height:200px; overflow-y:auto;
+      background:rgba(255,255,255,0.95); border-radius:4px; box-shadow:0 2px 4px rgba(0,0,0,0.2); z-index:1002; }
+    .results-item { padding:8px 12px; border-bottom:1px solid #ddd; }
+    .results-item:last-child { border-bottom:none; }
+    .results-item button { margin-right:8px; padding:4px 8px; font-size:14px; border:none; border-radius:4px; cursor:pointer; }
+    .results-item .directions { background:#4285f4; color:#fff; }
+    .results-item .details { background:#aaa; color:#fff; }
+    .settings-panel { display:none; position:absolute; top:80px; left:50%; transform:translateX(-50%);
+      width:90%; max-width:350px; background:#fff; padding:16px; border-radius:12px; box-shadow:0 2px 6px rgba(0,0,0,0.3); z-index:1001; }
+    .settings-panel.active { display:block; }
+    .settings-panel label { display:block; font-size:14px; margin-bottom:12px; }
+    .settings-panel select, .settings-panel input { margin-left:8px; }
+    .tab-bar { position:absolute; bottom:12px; left:50%; transform:translateX(-50%); z-index:1003;
+      background:rgba(255,255,255,0.95); border-radius:24px; display:flex; box-shadow:0 2px 6px rgba(0,0,0,0.3); }
+    .tab-btn { padding:8px 24px; font-size:14px; color:#555; cursor:pointer; border:none; background:none; border-radius:24px; }
+    .tab-btn.active { background:#4285f4; color:#fff; }
+  </style>
+</head>
+<body>
 
-  <div id="map"></div> <!-- 93 -->
+  <div id="map"></div>
 
-  <div class="search-bar"> <!-- 94 -->
+  <div class="search-bar">
     <input id="search" placeholder="Search nearby...">
-  </div> <!-- 95 -->
+  </div>
 
-  <div class="chip-bar"> <!-- 96 -->
+  <div class="chip-bar">
     <div class="chip active" data-type="">All</div>
     <div class="chip" data-type="restaurant">Restaurants</div>
     <div class="chip" data-type="cafe">Coffee</div>
     <div class="chip" data-type="gas_station">Gas</div>
-  </div> <!-- 100 -->
+  </div>
 
-  <div class="results-list" id="resultsList"></div> <!-- 101 -->
+  <div class="results-list" id="resultsList"></div>
 
-  <div class="settings-panel" id="settingsPanel"> <!-- 102 -->
+  <div class="settings-panel" id="settingsPanel">
     <label>Waypoint mode:
       <select id="wpMode">
         <option value="click">Click</option>
@@ -72,185 +72,118 @@
     </label>
     <label><input type="checkbox" id="largeText"> Large text mode</label>
     <label><input type="checkbox" id="highContrast"> High contrast mode</label>
-  </div> <!-- 108 -->
+  </div>
 
-  <div class="control-fab"> <!-- 109 -->
+  <div class="control-fab">
     <div class="fab" id="routeFab">⇨</div>
     <div class="fab" id="simulateFab">🚗</div>
     <div class="fab" id="trafficFab">🚦</div>
-  </div> <!-- 113 -->
+  </div>
 
-  <div id="directions"></div> <!-- 114 -->
+  <div id="directions"></div>
 
-  <div class="tab-bar"> <!-- 115 -->
+  <div class="tab-bar">
     <button class="tab-btn active" data-tab="map">Map</button>
     <button class="tab-btn" data-tab="settings">Settings</button>
-  </div> <!-- 118 -->
+  </div>
 
-  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- 119 -->
-  <script> /* 120–300 logic */
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+  <script>
     const map = L.map('map').setView([0,0],14);
     const maptilerKey = "evu6UnrC9Rogt8JtpljW";
     const openRouteKey = "YOUR_OPENROUTE_KEY";
     L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`, {
-      attribution: '© MapTiler © OSM'
+      attribution:'© MapTiler © OSM'
     }).addTo(map);
 
-    let userLoc = null, searchMarker = null, routeLayer = null, simMarker = null, trafficLayer = null;
-    let routeCoords = [], waypoints = [], waypointMarkers = [];
-    let currentType = "", wpMode = 'click';
+    let userLoc=null, searchMarker=null, routeLayer=null, simMarker=null, trafficLayer=null;
+    let routeCoords=[], currentType="", wpMode='click';
 
-    navigator.geolocation.getCurrentPosition(p => {
-      userLoc = [p.coords.latitude, p.coords.longitude];
+    navigator.geolocation.getCurrentPosition(p=>{
+      userLoc=[p.coords.latitude,p.coords.longitude];
       map.setView(userLoc,14);
     });
 
-    document.querySelectorAll('.chip').forEach(chip => {
-      chip.addEventListener('click', () => {
+    document.querySelectorAll('.chip').forEach(chip=>{
+      chip.addEventListener('click', ()=>{
         document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
         chip.classList.add('active');
         currentType = chip.dataset.type;
       });
     });
 
+    // search results list
     const resultsList = document.getElementById('resultsList');
     async function onSearch(q) {
-      if (!q) { resultsList.innerHTML = ''; return; }
+      resultsList.innerHTML = '';
+      if (!q) return;
       const center = userLoc || map.getCenter();
       const vb = `${center[1]-0.05},${center[0]+0.05},${center[1]+0.05},${center[0]-0.05}`;
-      const data = await (await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${currentType?` ${currentType}`:''}&limit=10&viewbox=${vb}&bounded=1`)).json();
-      resultsList.innerHTML = '';
-      const byDist = data.map(p => {
-        const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
-        return { p, dist: map.distance([lat, lon], center) };
-      }).sort((a,b)=>a.dist-b.dist);
-      byDist.forEach(({ p, dist }) => {
-        const item = document.createElement('div');
-        item.className = 'results-item';
+      const resp = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${currentType?` ${currentType}`:''}&limit=10&viewbox=${vb}&bounded=1`);
+      const data = await resp.json();
+      data.map(p=>{
+        p.dist = map.distance([p.lat,p.lon], center);
+        return p;
+      }).sort((a,b)=>a.dist-b.dist)
+      .forEach(p=>{
+        const div = document.createElement('div');
+        div.className='results-item';
         const title = document.createElement('div');
-        title.textContent = `${p.display_name} (${(dist/1000).toFixed(2)} km)`;
-        title.style.fontWeight = '500';
-        item.appendChild(title);
-
+        title.textContent = `${p.display_name} (${(p.dist/1000).toFixed(2)} km)`;
+        title.style.fontWeight='500';
+        div.appendChild(title);
         const btnDir = document.createElement('button');
-        btnDir.textContent = 'Directions';
-        btnDir.className = 'directions';
-        btnDir.onclick = () => {
-          resultsList.innerHTML = '';
+        btnDir.textContent='Directions';
+        btnDir.className='directions';
+        btnDir.onclick = ()=>{
+          resultsList.innerHTML='';
           const lat = parseFloat(p.lat), lon = parseFloat(p.lon);
           map.setView([lat, lon],16);
           if (searchMarker) map.removeLayer(searchMarker);
           searchMarker = L.marker([lat, lon]).addTo(map).bindPopup(p.display_name).openPopup();
           calculateRouteTo([lat, lon]);
         };
-        item.appendChild(btnDir);
-
+        div.appendChild(btnDir);
         const btnDet = document.createElement('button');
-        btnDet.textContent = 'Details';
-        btnDet.className = 'details';
-        btnDet.onclick = () => alert(`Details coming soon for:\n${p.display_name}`);
-        item.appendChild(btnDet);
-        resultsList.appendChild(item);
+        btnDet.textContent='Details';
+        btnDet.className='details';
+        btnDet.onclick = ()=>alert(`Details coming soon for:\n${p.display_name}`);
+        div.appendChild(btnDet);
+        resultsList.appendChild(div);
       });
     }
+    document.getElementById('search').addEventListener('input', e=>onSearch(e.target.value));
 
-    document.getElementById('search').addEventListener('input', e => onSearch(e.target.value));
-    document.getElementById('search').addEventListener('focus', () => onSearch(document.getElementById('search').value));
-
-    document.getElementById('wpMode').addEventListener('change', e => {
-      wpMode = e.target.value;
-      setWpListeners();
-    });
-
-    function addWaypoint(e) {
-      if (waypoints.length >= 2) return;
-      const ll = e.latlng ? [e.latlng.lat, e.latlng.lng] : e;
-      waypoints.push(ll);
-      const idx = waypoints.length;
-      const color = idx===1 ? '#4285f4' : '#34a853';
-      const marker = L.marker(ll, {
-        icon: L.divIcon({
-          html: `<div style="background:${color};color:#fff;border-radius:50%;
-            width:24px;height:24px;line-height:24px;text-align:center;">${idx}</div>`,
-          iconSize:[24,24]
-        })
-      }).addTo(map);
-      marker.on('click', ()=>{
-        map.removeLayer(marker);
-        const id = waypointMarkers.indexOf(marker);
-        waypointMarkers.splice(id,1);
-        waypoints.splice(id,1);
-        waypointMarkers.forEach((m,i)=>m.setIcon(L.divIcon({ html: `<div style="background:${i===0?'#4285f4':'#34a853'};color:#fff;border-radius:50%;
-            width:24px;height:24px;line-height:24px;text-align:center;">${i+1}</div>`, iconSize:[24,24] })));
-        if (waypoints.length===2) calculateRoute();
+    async function calculateRouteTo(dest) {
+      if (!userLoc) return alert('Current location unavailable');
+      const coords=[[+userLoc[1],+userLoc[0]],[+dest[1],+dest[0]]];
+      const res=await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
+        method:'POST',headers:{Authorization:openRouteKey,'Content-Type':'application/json'},
+        body:JSON.stringify({coordinates:coords})
       });
-      waypointMarkers.push(marker);
-      if (waypoints.length===2) calculateRoute();
-    }
-
-    function setWpListeners() {
-      map.off('click dblclick mousedown');
-      if (wpMode==='click') map.on('click', addWaypoint);
-      else if (wpMode==='double') map.on('dblclick', addWaypoint);
-      else if (wpMode==='hold') {
-        map.on('mousedown', e=>{
-          const t=Date.now();
-          map.once('mouseup', up=>{ if (Date.now()-t>600) addWaypoint(up); });
-        });
-      }
-    }
-    setWpListeners();
-
-    async function calculateRoute() {
-      if (!userLoc || waypoints.length < 2) return;
-      const coords = [
-        [+userLoc[1], +userLoc[0]],
-        [waypoints[0][1], waypoints[0][0]],
-        [waypoints[1][1], waypoints[1][0]]
-      ];
-      const geo = await fetch('https://api.maptiler.com/maps/streets',{method:'POST'});
-      const res = await fetch('https://api.openrouteservice.org/v2/directions/driving‑car/geojson', {
-        method:'POST',
-        headers:{Authorization: openRouteKey, 'Content-Type':'application/json'},
-        body: JSON.stringify({coordinates: coords})
-      });
-      const geojson = await res.json();
+      const geo=await res.json();
       routeLayer && map.removeLayer(routeLayer);
-      routeLayer = L.geoJSON(geojson, { style:{color:'#4285f4', weight:5} }).addTo(map);
+      routeLayer=L.geoJSON(geo,{style:{color:'#4285f4',weight:5}}).addTo(map);
       map.fitBounds(routeLayer.getBounds());
-      const steps = geojson.features[0].properties.segments.flatMap(s=>s.steps);
-      document.getElementById('directions').innerHTML = steps.map((st,i)=>`<p>${i+1}. ${st.instruction}</p>`).join('');
-      routeCoords = geojson.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+      const steps=geo.features[0].properties.segments.flatMap(s=>s.steps);
+      document.getElementById('directions').innerHTML=steps.map((st,i)=>
+        `<p>${i+1}. ${st.instruction}</p>`).join('');
     }
 
-    async function calculateRouteTo(dest) { /* identical logic for two‑point route */ calculateRoute.apply(this); }
-
-    document.getElementById('routeFab').addEventListener('click', calculateRoute);
-    document.getElementById('simulateFab').addEventListener('click', ()=>{ /* simulate logic */ });
-    document.getElementById('trafficFab').addEventListener('click', ()=>{ /* traffic logic */ });
-
-    // accessibility toggles
-    document.getElementById('largeText').addEventListener('change', e => {
-      document.body.style.fontSize = e.target.checked ? '1.2em' : '';
-    });
-    document.getElementById('highContrast').addEventListener('change', e => {
-      document.body.style.filter = e.target.checked ? 'contrast(1.5)' : '';
-    });
-
-    // tab switching logic
     document.querySelectorAll('.tab-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
+      btn.addEventListener('click',()=>{
         document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
         btn.classList.add('active');
-        const showMap = btn.dataset.tab === 'map';
-        document.querySelector('.search-bar').style.display = showMap ? 'block' : 'none';
-        document.querySelector('.chip-bar').style.display = showMap ? 'flex' : 'none';
-        document.getElementById('controlFab').style.display = showMap ? 'flex' : 'none';
-        document.getElementById('directions').style.display = showMap ? 'block' : 'none';
-        document.getElementById('resultsList').style.display = showMap ? 'block' : 'none';
+        const showMap = btn.dataset.tab==='map';
+        document.querySelector('.search-bar').style.display = showMap?'block':'none';
+        document.querySelector('.chip-bar').style.display = showMap?'flex':'none';
+        document.getElementById('routeFab').parentElement.style.display = showMap?'flex':'none';
+        document.getElementById('directions').style.display = showMap?'block':'none';
+        resultsList.style.display = showMap?'block':'none';
         document.getElementById('settingsPanel').classList.toggle('active', !showMap);
       });
     });
-  </script> <!-- 300 -->
+  </script>
+
 </body>
 </html>
