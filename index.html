@@ -1,127 +1,132 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF‑8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Map App with Settings</title>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css">
-  <style>
-    body, html { margin: 0; padding: 0; height: 100%; font-family: sans-serif; }
-    #controls, #settings { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px; background: #fff; }
-    input, select, button, label { padding: 8px; font-size: 14px; flex: 1 1 150px; }
-    button { background: #007bff; color: #fff; border: none; cursor: pointer; }
-    #map { height: 65vh; }
-    #directions { height: 25vh; overflow-y: auto; padding: 10px; background: #f8f8f8; font-size: 14px; }
-    @media(max-width:600px){ input, select, button, label{ flex:1 1 100% } }
-    .autocomplete-items { position: absolute; background: #fff; z-index: 1000; border: 1px solid #ccc; }
-    .autocomplete-items div { padding: 4px; cursor: pointer; }
-    .autocomplete-active { background: #e9e9e9; }
-    .select-buttons { margin-top: 4px; display: flex; gap: 4px; }
+<!DOCTYPE html> <!-- 1 -->
+<html lang="en"> <!-- 2 -->
+<head> <!-- 3 -->
+  <meta charset="UTF-8"> <!-- 4 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 5 -->
+  <title>Modern MapApp Fixed</title> <!-- 6 -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"> <!-- 7 -->
+  <style> /* 8–35 */ body,html{margin:0;padding:0;height:100%;font-family:'Roboto',sans-serif;} #tabs{display:flex;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);} .tab{flex:1;text-align:center;padding:12px;cursor:pointer;} .tab.active{border-bottom:3px solid #4285f4;color:#4285f4;font-weight:500;} #main,#settings{position:absolute;top:50px;bottom:0;width:100%;display:none;} #main.active,#settings.active{display:block;} #controls{background:#fff;padding:8px;box-shadow:0 1px 2px rgba(0,0,0,0.2);display:flex;gap:4px;} input,select,button{font-size:14px;padding:8px;border-radius:4px;border:1px solid #ccc;} button{background:#4285f4;color:#fff;border:none;} #map{position:absolute;top:98px;bottom:120px;width:100%;} #directions{position:absolute;bottom:0;height:120px;width:100%;overflow-y:auto;background:#fff;padding:8px;font-size:14px;} .autocomplete-items{position:absolute;background:#fff;z-index:1000;width:calc(100% - 16px);border:1px solid #ccc;} .autocomplete-items div{padding:8px;cursor:pointer;} .autocomplete-active{background:#eee;} .select-buttons{margin-top:4px;display:flex;gap:4px;} /* 35 end */ </style> <!-- 36 -->
+</head> <!-- 37 -->
+<body> <!-- 38 -->
+  <div id="tabs"> <!-- 39 -->
+    <div class="tab active" data-tab="main">Map</div> <!-- 40 -->
+    <div class="tab" data-tab="settings">Settings</div> <!-- 41 -->
+  </div> <!-- 42 -->
+  <div id="main" class="active"> <!-- 43 -->
+    <div id="controls"> <!-- 44 -->
+      <input id="search" placeholder="Search...">
+      <select id="searchType"><option value="">All</option><option value="restaurant">Restaurant</option><option value="supermarket">Supermarket</option><option value="hotel">Hotel</option><option value="gas_station">Gas Station</option></select>
+      <input id="start" placeholder="Start">
+      <input id="end" placeholder="End">
+      <button id="routeBtn">Route</button>
+      <button id="simulateBtn">Simulate</button>
+      <label><input type="checkbox" id="trafficToggle"> Traffic</label>
+    </div> <!-- 55 -->
+    <div id="map"></div> <!-- 56 -->
+    <div id="directions"></div> <!-- 57 -->
+  </div> <!-- 58 -->
+  <div id="settings"> <!-- 59 -->
+    <div style="padding:12px;">
+      <label><input type="checkbox" id="useCurrentLocation"> Use current location as Start</label><br><br>
+      <label><input type="checkbox" id="largeText"> Large Text Mode</label><br>
+      <label><input type="checkbox" id="highContrast"> High Contrast Mode</label>
+    </div>
+  </div> <!-- 67 -->
 
-    #tabs { display: flex; cursor: pointer; margin-bottom: 4px; }
-    .tab { padding: 8px 12px; background: #eee; border-radius: 4px 4px 0 0; }
-    .tab.active { background: #fff; font-weight: bold; }
-    #main, #settings { border: 1px solid #ccc; border-top: none; }
-  </style>
-</head>
-<body>
-
-<div id="tabs">
-  <div class="tab active" data-tab="main">Main</div>
-  <div class="tab" data-tab="settings">Settings</div>
-</div>
-
-<div id="main">
-  <div id="controls">
-    <input id="search" placeholder="Search place or category...">
-    <button id="searchBtn">Search</button>
-    <select id="searchType">
-      <option value="">All types</option>
-      <option value="restaurant">Restaurant</option>
-      <option value="supermarket">Supermarket</option>
-      <option value="hotel">Hotel</option>
-      <option value="gas_station">Gas Station</option>
-    </select>
-    <input id="start" placeholder="Start location">
-    <input id="end" placeholder="End location">
-    <button id="routeBtn">Get Route</button>
-    <button id="simulateBtn">Start Simulation</button>
-    <label><input type="checkbox" id="trafficToggle"> Traffic</label>
-  </div>
-  <div id="map"></div>
-  <div id="directions"></div>
-</div>
-
-<div id="settings" style="display:none;">
-  <div id="settings-panel">
-    <label><input type="checkbox" id="useCurrentLocation"> Use current location as default start</label>
-    <label><input type="checkbox" id="largeText"> Enable large text mode</label>
-    <label><input type="checkbox" id="highContrast"> High contrast mode</label>
-  </div>
-</div>
-
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-  // Tabs logic
-  document.querySelectorAll('.tab').forEach(tab => {
-    tab.addEventListener('click', () => {
-      document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-      tab.classList.add('active');
-      document.getElementById('main').style.display = tab.dataset.tab === 'main' ? '' : 'none';
-      document.getElementById('settings').style.display = tab.dataset.tab === 'settings' ? '' : 'none';
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- 68 -->
+<script> /* script lines 69–164 */ 
+  document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('main').classList.toggle('active', tab.dataset.tab==='main');
+    document.getElementById('settings').classList.toggle('active', tab.dataset.tab==='settings');
+  })); // ~76
+  const map = L.map('map').setView([0,0],2); const maptilerKey="evu6UnrC9Rogt8JtpljW", openRouteKey="..."; // 77–78
+  L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`,{ attribution:'© MapTiler © OSM' }).addTo(map); //79
+  let trafficLayer=null, routeLayer=null, simMarker=null, searchMarker=null; let waypoints=[], routeCoords=[]; //80
+  function attachAutocomplete(input,onSelect){ //81
+    let focus=-1;
+    input.addEventListener('input', async function(){
+      const q=this.value; if(!q) return clear();
+      const bbox=map.getBounds(); const type=document.getElementById('searchType').value;
+      const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${type?` ${type}`:''}&limit=5&viewbox=${bbox.getWest()},${bbox.getNorth()},${bbox.getEast()},${bbox.getSouth()}&bounded=1`;
+      const data=await (await fetch(url)).json(); clear();
+      const list=document.createElement('div'); list.className='autocomplete-items'; this.parentNode.appendChild(list);
+      data.forEach(p=>{
+        const item=document.createElement('div');
+        item.innerHTML=`<strong>${p.display_name}</strong>`;
+        const btns=document.createElement('div'); btns.className='select-buttons';
+        ['Start','End'].forEach(tb=>{
+          const b=document.createElement('button'); b.textContent=`Use as ${tb}`;
+          b.addEventListener('click', ()=>{ const inp=document.getElementById(tb.toLowerCase());
+            inp.value=p.display_name; inp.dataset.lat=p.lat; inp.dataset.lon=p.lon; list.remove(); });
+          btns.appendChild(b);
+        });
+        item.appendChild(btns);
+        item.addEventListener('click',()=>{
+          searchMarker&&map.removeLayer(searchMarker);
+          const ll=[parseFloat(p.lat),parseFloat(p.lon)];
+          searchMarker=L.marker(ll).addTo(map).bindPopup(p.display_name).openPopup();
+          map.setView(ll,16);
+          onSelect&&onSelect(p);
+        });
+        list.appendChild(item);
+      });
     });
-  });
-
-  const map = L.map('map').setView([0,0],2);
-  const maptilerKey = "evu6UnrC9Rogt8JtpljW";
-  const openRouteKey = "YOUR_OPENROUTE_KEY";
-
-  L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`, {
-    attribution: '© MapTiler © OpenStreetMap contributors'
-  }).addTo(map);
-
-  let trafficLayer = null, routeLayer=null, simMarker=null;
-  let routeCoords = [], waypoints = [];
-
-  function attachAutocomplete(input){
-    // ... (same as before)
-  }
-
+    input.addEventListener('keydown',e=>{ const items=document.querySelectorAll('.autocomplete-items div');
+      if(!items.length) return; if(e.key==='ArrowDown'){ focus=(focus+1)%items.length; items[focus].classList.add('autocomplete-active');}
+      else if(e.key==='ArrowUp'){ focus=(focus-1+items.length)%items.length; items[focus].classList.add('autocomplete-active');}
+      else if(e.key==='Enter'&&focus>=0){ items[focus].click(); e.preventDefault(); }
+    });
+    document.addEventListener('click',clear);
+    function clear(){ document.querySelectorAll('.autocomplete-items').forEach(el=>el.remove()); focus=-1; }
+  } // ~136
   attachAutocomplete(document.getElementById('search'));
   attachAutocomplete(document.getElementById('start'));
   attachAutocomplete(document.getElementById('end'));
-
-  document.getElementById('routeBtn').addEventListener('click', async () => {
-    const s = document.getElementById('start'), e = document.getElementById('end');
-    if (document.getElementById('useCurrentLocation').checked) {
-      await new Promise(resolve => navigator.geolocation.getCurrentPosition(pos => {
-        s.value = 'Current Location';
-        s.dataset.lat = pos.coords.latitude;
-        s.dataset.lon = pos.coords.longitude;
-        resolve();
+  document.getElementById('routeBtn').addEventListener('click', async ()=>{
+    const s=document.getElementById('start'), e=document.getElementById('end');
+    if(document.getElementById('useCurrentLocation').checked){
+      await new Promise(resolve=>navigator.geolocation.getCurrentPosition(pos=>{
+        s.value='Current Location'; s.dataset.lat=pos.coords.latitude; s.dataset.lon=pos.coords.longitude; resolve();
       }));
     }
-    if (!s.dataset.lat || !e.dataset.lat) return alert('Start & End must be selected');
-    // ... routing logic (same as before)
+    if(!s.dataset.lat||!e.dataset.lat) return alert('Select Start and End');
+    const coords=[[+s.dataset.lon,+s.dataset.lat],...waypoints.map(w=>[w[1],w[0]]),[+e.dataset.lon,+e.dataset.lat]];
+    const res=await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
+      method:'POST',headers:{Authorization:openRouteKey,'Content-Type':'application/json'},
+      body:JSON.stringify({coordinates:coords})
+    });
+    const geo=await res.json(); routeLayer&&map.removeLayer(routeLayer);
+    routeLayer=L.geoJSON(geo,{style:{color:'blue',weight:5}}).addTo(map);
+    map.fitBounds(routeLayer.getBounds());
+    routeCoords=geo.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+    const steps=geo.features[0].properties.segments.flatMap(s=>s.steps);
+    document.getElementById('directions').innerHTML=steps.map((st,i)=>`<p>${i+1}. ${st.instruction}</p>`).join('');
   });
-
-  // Traffic toggle handler (inserted fully as before)
-
-  map.on('click', e => {
-    // waypoint logic
+  map.on('click',e=>{ const m=L.marker([e.latlng.lat,e.latlng.lng]).addTo(map).bindPopup(`Waypoint ${waypoints.length+1}`).openPopup();
+    waypoints.push([e.latlng.lat,e.latlng.lng]);
   });
-
-  document.getElementById('simulateBtn').addEventListener('click', () => {
-    // simulation logic
+  document.getElementById('simulateBtn').addEventListener('click',()=>{
+    if(!routeCoords.length) return alert('Generate route first');
+    simMarker&&map.removeLayer(simMarker);
+    simMarker=L.marker(routeCoords[0]).addTo(map);
+    let i=0; const iv=setInterval(()=>{ if(i>=routeCoords.length){clearInterval(iv);return;}
+      simMarker.setLatLng(routeCoords[i]); i++;
+    },200);
   });
-
-  // Accessibility settings handlers:
-  document.getElementById('largeText').addEventListener('change', (e) => {
-    document.body.style.fontSize = e.target.checked ? '1.3em' : '';
+  document.getElementById('trafficToggle').addEventListener('change',e=>{
+    if(e.target.checked){
+      if(!trafficLayer){
+        trafficLayer=L.tileLayer(`https://api.maptiler.com/tiles/traffic/256/{z}/{x}/{y}.png?key=${maptilerKey}`,{attribution:'Traffic © MapTiler',opacity:0.7});
+      }
+      map.addLayer(trafficLayer);
+    } else {
+      trafficLayer&&map.removeLayer(trafficLayer); trafficLayer=null;
+    }
   });
-  document.getElementById('highContrast').addEventListener('change', (e) => {
-    document.body.style.filter = e.target.checked ? 'contrast(1.5)' : '';
-  });
-</script>
+  document.getElementById('largeText').addEventListener('change',e=>document.body.style.fontSize=e.target.checked?'1.2em':'');
+  document.getElementById('highContrast').addEventListener('change',e=>document.body.style.filter=e.target.checked?'contrast(1.5)':'');
+</script> <!-- 164 -->
 </body>
 </html>
