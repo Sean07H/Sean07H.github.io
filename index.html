@@ -1,132 +1,139 @@
-<!DOCTYPE html> <!-- 1 -->
-<html lang="en"> <!-- 2 -->
-<head> <!-- 3 -->
-  <meta charset="UTF-8"> <!-- 4 -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 5 -->
-  <title>Modern MapApp Fixed</title> <!-- 6 -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"> <!-- 7 -->
-  <style> /* 8–35 */ body,html{margin:0;padding:0;height:100%;font-family:'Roboto',sans-serif;} #tabs{display:flex;background:#fff;box-shadow:0 1px 4px rgba(0,0,0,0.3);} .tab{flex:1;text-align:center;padding:12px;cursor:pointer;} .tab.active{border-bottom:3px solid #4285f4;color:#4285f4;font-weight:500;} #main,#settings{position:absolute;top:50px;bottom:0;width:100%;display:none;} #main.active,#settings.active{display:block;} #controls{background:#fff;padding:8px;box-shadow:0 1px 2px rgba(0,0,0,0.2);display:flex;gap:4px;} input,select,button{font-size:14px;padding:8px;border-radius:4px;border:1px solid #ccc;} button{background:#4285f4;color:#fff;border:none;} #map{position:absolute;top:98px;bottom:120px;width:100%;} #directions{position:absolute;bottom:0;height:120px;width:100%;overflow-y:auto;background:#fff;padding:8px;font-size:14px;} .autocomplete-items{position:absolute;background:#fff;z-index:1000;width:calc(100% - 16px);border:1px solid #ccc;} .autocomplete-items div{padding:8px;cursor:pointer;} .autocomplete-active{background:#eee;} .select-buttons{margin-top:4px;display:flex;gap:4px;} /* 35 end */ </style> <!-- 36 -->
-</head> <!-- 37 -->
-<body> <!-- 38 -->
-  <div id="tabs"> <!-- 39 -->
-    <div class="tab active" data-tab="main">Map</div> <!-- 40 -->
-    <div class="tab" data-tab="settings">Settings</div> <!-- 41 -->
-  </div> <!-- 42 -->
-  <div id="main" class="active"> <!-- 43 -->
-    <div id="controls"> <!-- 44 -->
-      <input id="search" placeholder="Search...">
-      <select id="searchType"><option value="">All</option><option value="restaurant">Restaurant</option><option value="supermarket">Supermarket</option><option value="hotel">Hotel</option><option value="gas_station">Gas Station</option></select>
-      <input id="start" placeholder="Start">
-      <input id="end" placeholder="End">
-      <button id="routeBtn">Route</button>
-      <button id="simulateBtn">Simulate</button>
-      <label><input type="checkbox" id="trafficToggle"> Traffic</label>
-    </div> <!-- 55 -->
-    <div id="map"></div> <!-- 56 -->
-    <div id="directions"></div> <!-- 57 -->
-  </div> <!-- 58 -->
-  <div id="settings"> <!-- 59 -->
-    <div style="padding:12px;">
-      <label><input type="checkbox" id="useCurrentLocation"> Use current location as Start</label><br><br>
-      <label><input type="checkbox" id="largeText"> Large Text Mode</label><br>
-      <label><input type="checkbox" id="highContrast"> High Contrast Mode</label>
-    </div>
-  </div> <!-- 67 -->
+<!DOCTYPE html><!--1-->
+<html lang="en"><!--2-->
+<head><!--3-->
+  <meta charset="UTF-8"><!--4-->
+  <meta name="viewport" content="width=device-width,initial-scale=1"><!--5-->
+  <title>Modern MapView</title><!--6-->
+  <link href="https://fonts.googleapis.com/css?family=Roboto:400,500&display=swap" rel="stylesheet"><!--7-->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css"><!--8-->
+  <style><!--9-->
+    body,html{height:100%;margin:0;padding:0;font-family:'Roboto',sans-serif;}/*10*/
+    #map{position:absolute;top:0;bottom:0;width:100%;}/*11*/
+    .topbar{position:absolute;top:10px;left:50%;transform:translateX(-50%);z-index:1000;
+      background:rgba(255,255,255,0.9);padding:8px 12px;border-radius:24px;
+      box-shadow:0 2px 6px rgba(0,0,0,0.3);display:flex;gap:8px;}/*12*/
+    .topbar input, .topbar select{border:1px solid #ccc;border-radius:4px;padding:6px 8px;font-size:14px;}/*13*/
+    .topbar button{background:#4285f4;color:#fff;border:none;padding:6px 12px;border-radius:4px;cursor:pointer;}/*14*/
+    .topbar button:hover{background:#3367d6;}/*15*/
+    #directions{position:absolute;bottom:0;width:100%;max-height:140px;background:rgba(255,255,255,0.95);
+      font-size:14px;overflow:auto;padding:10px;box-shadow:0 -2px 6px rgba(0,0,0,0.3);}/*16*/
+    .autocomplete-items{position:absolute;background:#fff;z-index:10000;width:200px;border:1px solid #ccc;border-radius:4px;}/*17*/
+    .autocomplete-items div{padding:8px;cursor:pointer;}/*18*/
+    .autocomplete-active{background:#ececec;}/*19*/
+  </style><!--20-->
+</head><!--21-->
+<body><!--22-->
+  <div id="map"></div><!--23-->
+  <div class="topbar"><!--24-->
+    <input id="search" placeholder="Search nearby...">
+    <select id="searchType"><option value="">All</option><option value="restaurant">Restaurant</option><option value="supermarket">Supermarket</option></select>
+    <button id="searchBtn">Go</button>
+    <button id="routeBtn">Route</button>
+    <button id="simulateBtn">Drive</button>
+    <label><input type="checkbox" id="trafficToggle">Traffic</label>
+  </div><!--30-->
+  <div id="directions"></div><!--31-->
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script> <!-- 68 -->
-<script> /* script lines 69–164 */ 
-  document.querySelectorAll('.tab').forEach(tab=>tab.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
-    tab.classList.add('active');
-    document.getElementById('main').classList.toggle('active', tab.dataset.tab==='main');
-    document.getElementById('settings').classList.toggle('active', tab.dataset.tab==='settings');
-  })); // ~76
-  const map = L.map('map').setView([0,0],2); const maptilerKey="evu6UnrC9Rogt8JtpljW", openRouteKey="..."; // 77–78
-  L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`,{ attribution:'© MapTiler © OSM' }).addTo(map); //79
-  let trafficLayer=null, routeLayer=null, simMarker=null, searchMarker=null; let waypoints=[], routeCoords=[]; //80
-  function attachAutocomplete(input,onSelect){ //81
-    let focus=-1;
-    input.addEventListener('input', async function(){
-      const q=this.value; if(!q) return clear();
-      const bbox=map.getBounds(); const type=document.getElementById('searchType').value;
-      const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${type?` ${type}`:''}&limit=5&viewbox=${bbox.getWest()},${bbox.getNorth()},${bbox.getEast()},${bbox.getSouth()}&bounded=1`;
-      const data=await (await fetch(url)).json(); clear();
-      const list=document.createElement('div'); list.className='autocomplete-items'; this.parentNode.appendChild(list);
-      data.forEach(p=>{
-        const item=document.createElement('div');
-        item.innerHTML=`<strong>${p.display_name}</strong>`;
-        const btns=document.createElement('div'); btns.className='select-buttons';
-        ['Start','End'].forEach(tb=>{
-          const b=document.createElement('button'); b.textContent=`Use as ${tb}`;
-          b.addEventListener('click', ()=>{ const inp=document.getElementById(tb.toLowerCase());
-            inp.value=p.display_name; inp.dataset.lat=p.lat; inp.dataset.lon=p.lon; list.remove(); });
-          btns.appendChild(b);
+  <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script><!--32-->
+  <script><!--33-->
+    const map = L.map('map').setView([0,0], 13);
+    const maptilerKey = "evu6UnrC9Rogt8JtpljW";
+    const openRouteKey = "YOUR_ORS_KEY";
+    L.tileLayer(`https://api.maptiler.com/maps/streets/{z}/{x}/{y}.png?key=${maptilerKey}`,{ attribution:'© MapTiler ©OSM' }).addTo(map);
+    let userLoc = null, searchMarker, routeLayer, simMarker, trafficLayer=null;
+    let routeCoords=[], waypoints=[];
+
+    navigator.geolocation.getCurrentPosition(pos=>{
+      userLoc=[pos.coords.latitude,pos.coords.longitude];
+      map.setView(userLoc, 14);
+    });
+
+    function attachAutocomplete(input){
+      let focus=-1;
+      input.addEventListener('input', async function(){
+        const q=this.value; if(!q) return clear();
+        const type = document.getElementById('searchType').value;
+        const center = userLoc || map.getCenter();
+        const viewbox = `${center[1]-0.05},${center[0]+0.05},${center[1]+0.05},${center[0]-0.05}`;
+        const url=`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}${type?` ${type}`:''}&limit=5&viewbox=${viewbox}&bounded=1`;
+        const data = await (await fetch(url)).json(); clear();
+        const list = document.createElement('div'); list.className='autocomplete-items';
+        this.parentNode.appendChild(list);
+        data.forEach(p=>{
+          const item = document.createElement('div');
+          item.textContent = p.display_name;
+          item.onclick = ()=>{
+            clear();
+            const ll=[parseFloat(p.lat),parseFloat(p.lon)];
+            searchMarker&&map.removeLayer(searchMarker);
+            searchMarker=L.marker(ll).addTo(map).bindPopup(p.display_name).openPopup();
+            map.setView(ll,16);
+            document.getElementById('start').dataset.lat=p.lat;
+            document.getElementById('start').dataset.lon=p.lon;
+            document.getElementById('end').dataset.lat=p.lat;
+            document.getElementById('end').dataset.lon=p.lon;
+          };
+          list.appendChild(item);
         });
-        item.appendChild(btns);
-        item.addEventListener('click',()=>{
-          searchMarker&&map.removeLayer(searchMarker);
-          const ll=[parseFloat(p.lat),parseFloat(p.lon)];
-          searchMarker=L.marker(ll).addTo(map).bindPopup(p.display_name).openPopup();
-          map.setView(ll,16);
-          onSelect&&onSelect(p);
-        });
-        list.appendChild(item);
       });
-    });
-    input.addEventListener('keydown',e=>{ const items=document.querySelectorAll('.autocomplete-items div');
-      if(!items.length) return; if(e.key==='ArrowDown'){ focus=(focus+1)%items.length; items[focus].classList.add('autocomplete-active');}
-      else if(e.key==='ArrowUp'){ focus=(focus-1+items.length)%items.length; items[focus].classList.add('autocomplete-active');}
-      else if(e.key==='Enter'&&focus>=0){ items[focus].click(); e.preventDefault(); }
-    });
-    document.addEventListener('click',clear);
-    function clear(){ document.querySelectorAll('.autocomplete-items').forEach(el=>el.remove()); focus=-1; }
-  } // ~136
-  attachAutocomplete(document.getElementById('search'));
-  attachAutocomplete(document.getElementById('start'));
-  attachAutocomplete(document.getElementById('end'));
-  document.getElementById('routeBtn').addEventListener('click', async ()=>{
-    const s=document.getElementById('start'), e=document.getElementById('end');
-    if(document.getElementById('useCurrentLocation').checked){
-      await new Promise(resolve=>navigator.geolocation.getCurrentPosition(pos=>{
-        s.value='Current Location'; s.dataset.lat=pos.coords.latitude; s.dataset.lon=pos.coords.longitude; resolve();
-      }));
+      input.addEventListener('keydown', e=>{
+        const items=document.querySelectorAll('.autocomplete-items div');
+        if(!items.length)return;
+        if(e.key==='ArrowDown'){focus=(focus+1)%items.length;items[focus].classList.add('autocomplete-active');}
+        else if(e.key==='ArrowUp'){focus=(focus-1+items.length)%items.length;items[focus].classList.add('autocomplete-active');}
+        else if(e.key==='Enter'&&focus>=0){items[focus].click(); e.preventDefault();}
+      });
+      document.addEventListener('click',clear);
+      function clear(){document.querySelectorAll('.autocomplete-items').forEach(el=>el.remove());focus=-1;}
     }
-    if(!s.dataset.lat||!e.dataset.lat) return alert('Select Start and End');
-    const coords=[[+s.dataset.lon,+s.dataset.lat],...waypoints.map(w=>[w[1],w[0]]),[+e.dataset.lon,+e.dataset.lat]];
-    const res=await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
-      method:'POST',headers:{Authorization:openRouteKey,'Content-Type':'application/json'},
-      body:JSON.stringify({coordinates:coords})
-    });
-    const geo=await res.json(); routeLayer&&map.removeLayer(routeLayer);
-    routeLayer=L.geoJSON(geo,{style:{color:'blue',weight:5}}).addTo(map);
-    map.fitBounds(routeLayer.getBounds());
-    routeCoords=geo.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
-    const steps=geo.features[0].properties.segments.flatMap(s=>s.steps);
-    document.getElementById('directions').innerHTML=steps.map((st,i)=>`<p>${i+1}. ${st.instruction}</p>`).join('');
-  });
-  map.on('click',e=>{ const m=L.marker([e.latlng.lat,e.latlng.lng]).addTo(map).bindPopup(`Waypoint ${waypoints.length+1}`).openPopup();
-    waypoints.push([e.latlng.lat,e.latlng.lng]);
-  });
-  document.getElementById('simulateBtn').addEventListener('click',()=>{
-    if(!routeCoords.length) return alert('Generate route first');
-    simMarker&&map.removeLayer(simMarker);
-    simMarker=L.marker(routeCoords[0]).addTo(map);
-    let i=0; const iv=setInterval(()=>{ if(i>=routeCoords.length){clearInterval(iv);return;}
-      simMarker.setLatLng(routeCoords[i]); i++;
-    },200);
-  });
-  document.getElementById('trafficToggle').addEventListener('change',e=>{
-    if(e.target.checked){
-      if(!trafficLayer){
-        trafficLayer=L.tileLayer(`https://api.maptiler.com/tiles/traffic/256/{z}/{x}/{y}.png?key=${maptilerKey}`,{attribution:'Traffic © MapTiler',opacity:0.7});
+
+    attachAutocomplete(document.getElementById('search'));
+    document.getElementById('searchBtn').onclick = ()=>document.getElementById('search').dispatchEvent(new Event('input'));
+
+    async function calculateRoute(){
+      const s=document.getElementById('start'), e=document.getElementById('end');
+      if(userLoc && !s.dataset.lat) {
+        s.dataset.lat=userLoc[0]; s.dataset.lon=userLoc[1];
       }
-      map.addLayer(trafficLayer);
-    } else {
-      trafficLayer&&map.removeLayer(trafficLayer); trafficLayer=null;
+      if(!s.dataset.lat||!e.dataset.lat) return alert('Please select valid locations');
+      const coords=[[+s.dataset.lon,+s.dataset.lat],...waypoints.map(w=>[w[1],w[0]]),[+e.dataset.lon,+e.dataset.lat]];
+      const res=await fetch('https://api.openrouteservice.org/v2/directions/driving-car/geojson',{
+        method:'POST',headers:{Authorization:openRouteKey,'Content-Type':'application/json'},
+        body:JSON.stringify({coordinates:coords})
+      });
+      const geo=await res.json(); routeLayer&&map.removeLayer(routeLayer);
+      routeLayer=L.geoJSON(geo,{style:{color:'#4285f4',weight:5}}).addTo(map);
+      map.fitBounds(routeLayer.getBounds());
+      routeCoords=geo.features[0].geometry.coordinates.map(c=>[c[1],c[0]]);
+      const steps=geo.features[0].properties.segments.flatMap(s=>s.steps);
+      document.getElementById('directions').innerHTML=steps.map((st,i)=>`<p>${i+1}. ${st.instruction}</p>`).join('');
     }
-  });
-  document.getElementById('largeText').addEventListener('change',e=>document.body.style.fontSize=e.target.checked?'1.2em':'');
-  document.getElementById('highContrast').addEventListener('change',e=>document.body.style.filter=e.target.checked?'contrast(1.5)':'');
-</script> <!-- 164 -->
+
+    document.getElementById('routeBtn').onclick = calculateRoute;
+
+    map.on('click',e=>{
+      waypoints.push([e.latlng.lat,e.latlng.lng]);
+      L.marker([e.latlng.lat,e.latlng.lng]).addTo(map).bindPopup('Waypoint').openPopup();
+    });
+
+    document.getElementById('simulateBtn').onclick = ()=>{
+      if(!routeCoords.length) return alert('Generate route first');
+      simMarker && map.removeLayer(simMarker);
+      simMarker=L.marker(routeCoords[0]).addTo(map);
+      let i=0; const iv=setInterval(()=>{
+        if(i>=routeCoords.length){ clearInterval(iv); return; }
+        simMarker.setLatLng(routeCoords[i]); i++;
+      },200);
+    };
+
+    document.getElementById('trafficToggle').addEventListener('change', e=>{
+      if(e.target.checked){
+        if(!trafficLayer){
+          trafficLayer=L.tileLayer(`https://api.maptiler.com/tiles/traffic/256/{z}/{x}/{y}.png?key=${maptilerKey}`,{attribution:'Traffic © MapTiler',opacity:0.7});
+        }
+        map.addLayer(trafficLayer);
+      } else trafficLayer&&map.removeLayer(trafficLayer);
+    });
+  </script><!--150-->
 </body>
 </html>
