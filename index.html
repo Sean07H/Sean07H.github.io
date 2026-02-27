@@ -3,101 +3,127 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pitch Decoder Alpha</title>
+    <title>Advanced Pitch Decoder</title>
     <style>
-        body { font-family: sans-serif; background: #1a1a1a; color: white; text-align: center; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; max-width: 400px; margin: 20px auto; }
-        button { padding: 20px; font-size: 1.1rem; border: none; border-radius: 8px; cursor: pointer; transition: 0.2s; }
-        .box-btn { background: #444; color: white; }
-        .box-btn:active { background: #007bff; }
-        .pitch-btn { padding: 15px; margin: 5px; font-weight: bold; }
-        .fastball { background: #ff4757; }
-        .offspeed { background: #2ed573; }
-        #log { background: #333; padding: 10px; height: 100px; overflow-y: scroll; margin-top: 20px; font-family: monospace; }
-        .prediction-box { font-size: 1.5rem; margin: 20px; padding: 15px; border: 2px solid #007bff; border-radius: 10px; }
+        body { font-family: -apple-system, sans-serif; background: #121212; color: #e0e0e0; text-align: center; padding: 10px; }
+        .container { max-width: 450px; margin: auto; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 15px 0; }
+        
+        button { padding: 18px; font-size: 1rem; border: none; border-radius: 12px; cursor: pointer; font-weight: bold; transition: transform 0.1s; }
+        button:active { transform: scale(0.95); }
+        
+        /* Categories */
+        .box-btn { background: #333; color: #fff; border: 1px solid #444; }
+        .face-btn { background: #5d4037; color: white; } /* Brownish for face */
+        .special-btn { background: #007bff; color: white; grid-column: span 2; }
+        
+        /* Pitch Results */
+        .pitch-ctrl { display: flex; gap: 10px; margin: 20px 0; }
+        .fastball { background: #d32f2f; flex: 1; }
+        .offspeed { background: #388e3c; flex: 1; }
+        
+        .prediction-box { font-size: 1.4rem; padding: 20px; background: #1e1e1e; border: 2px solid #007bff; border-radius: 15px; margin-bottom: 15px; }
+        #log { background: #000; padding: 10px; height: 120px; overflow-y: auto; text-align: left; font-size: 0.8rem; border-radius: 8px; border: 1px solid #333; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
 
-    <h1>Pitch Decoder</h1>
-    
+<div class="container">
     <div class="prediction-box">
-        Prediction: <span id="prediction">Waiting for data...</span>
+        <small>Next Pitch Prediction:</small><br>
+        <span id="prediction">COLLECTING DATA</span>
     </div>
 
-    <div class="grid">
-        <button class="box-btn" onclick="recordTouch(1)">1. Hat</button>
-        <button class="box-btn" onclick="recordTouch(2)">2. Face</button>
-        <button class="box-btn" onclick="recordTouch(3)">3. Chest</button>
-        <button class="box-btn" onclick="recordTouch(4)">4. L-Arm</button>
-        <button class="box-btn" onclick="recordTouch(5)">5. R-Arm</button>
-        <button class="box-btn" onclick="recordTouch(6)">6. Belt</button>
-        <button class="box-btn" onclick="recordTouch(7)">7. L-Thigh</button>
-        <button class="box-btn" onclick="recordTouch(8)">8. R-Thigh</button>
+    <div id="main-grid" class="grid">
+        <button class="box-btn" onclick="record(1, 'Hat')">1. Hat</button>
+        <button class="special-btn" onclick="toggleFaceMenu()">2. ENTER FACE MENU ▾</button>
+        <button class="box-btn" onclick="record(3, 'Chest')">3. Chest</button>
+        <button class="box-btn" onclick="record(4, 'L-Arm')">4. L-Arm</button>
+        <button class="box-btn" onclick="record(5, 'R-Arm')">5. R-Arm</button>
+        <button class="box-btn" onclick="record(6, 'Belt')">6. Belt</button>
+        <button class="box-btn" onclick="record(7, 'L-Thigh')">7. L-Thigh</button>
+        <button class="box-btn" onclick="record(8, 'R-Thigh')">8. R-Thigh</button>
     </div>
 
-    <hr>
-    <h3>What was the result?</h3>
-    <button class="pitch-btn fastball" onclick="submitResult('Fastball')">FASTBALL</button>
-    <button class="pitch-btn offspeed" onclick="submitResult('Offspeed')">OFFSPEED</button>
+    <div id="face-grid" class="grid hidden">
+        <button class="face-btn" onclick="record('2a', 'Nose')">Nose</button>
+        <button class="face-btn" onclick="record('2b', 'L-Temple')">L-Temple</button>
+        <button class="face-btn" onclick="record('2c', 'R-Temple')">R-Temple</button>
+        <button class="face-btn" onclick="record('2d', 'L-Cheek')">L-Cheek</button>
+        <button class="face-btn" onclick="record('2e', 'R-Cheek')">R-Cheek</button>
+        <button class="face-btn" onclick="record('2f', 'Chin')">Chin</button>
+        <button class="special-btn" onclick="toggleFaceMenu()" style="background:#666;">back to main body</button>
+    </div>
 
-    <div id="log">--- Sequence Log ---</div>
+    <div class="pitch-ctrl">
+        <button class="fastball" onclick="finishSequence('Fastball')">KNEW FASTBALL</button>
+        <button class="offspeed" onclick="finishSequence('Offspeed')">KNEW OFFSPEED</button>
+    </div>
 
-    <script>
-        let currentSequence = [];
-        let history = []; // Stores { sequence: [], result: "" }
+    <div id="log">--- Data Log ---</div>
+    <button onclick="clearData()" style="margin-top:10px; background:none; color:grey; border:none; font-size:10px;">RESET ALL DATA</button>
+</div>
 
-        function recordTouch(id) {
-            currentSequence.push(id);
-            updateLog(`Touch: ${id}`);
-            predictNext();
-        }
+<script>
+    let currentSequence = [];
+    let brain = []; // Array of objects {seq: [], pitch: ""}
 
-        function submitResult(pitch) {
-            if (currentSequence.length === 0) return;
-            
-            history.push({
-                sequence: [...currentSequence],
-                result: pitch
-            });
-            
-            updateLog(`Result: ${pitch} recorded.`);
-            currentSequence = []; // Reset for next pitch
-        }
+    function toggleFaceMenu() {
+        document.getElementById('main-grid').classList.toggle('hidden');
+        document.getElementById('face-grid').classList.toggle('hidden');
+    }
 
-        function predictNext() {
-            if (history.length < 2 || currentSequence.length === 0) return;
+    function record(id, name) {
+        currentSequence.push(id);
+        updateLog(`Input: ${name}`);
+        analyze();
+    }
 
-            const lastTouch = currentSequence[currentSequence.length - 1];
-            let fastballCount = 0;
-            let offspeedCount = 0;
+    function finishSequence(actualPitch) {
+        if(currentSequence.length === 0) return;
+        
+        brain.push({
+            sequence: [...currentSequence],
+            result: actualPitch
+        });
+        
+        updateLog(`<strong>Result: ${actualPitch}</strong>`);
+        currentSequence = [];
+        analyze();
+    }
 
-            // Simple Pattern Matcher: Look for sequences where the 
-            // current last touch was followed by a specific pitch.
-            history.forEach(entry => {
-                if (entry.sequence.includes(lastTouch)) {
-                    if (entry.result === "Fastball") fastballCount++;
-                    else offspeedCount++;
-                }
-            });
+    function analyze() {
+        if (brain.length < 1 || currentSequence.length === 0) return;
 
-            const predElement = document.getElementById('prediction');
-            if (fastballCount > offspeedCount) {
-                predElement.innerText = "FASTBALL EXPECTED";
-                predElement.style.color = "#ff4757";
-            } else if (offspeedCount > fastballCount) {
-                predElement.innerText = "OFFSPEED EXPECTED";
-                predElement.style.color = "#2ed573";
-            } else {
-                predElement.innerText = "Analyzing...";
+        const lastTouch = currentSequence[currentSequence.length - 1];
+        let fb = 0, os = 0;
+
+        brain.forEach(entry => {
+            if (entry.sequence.includes(lastTouch)) {
+                entry.result === "Fastball" ? fb++ : os++;
             }
-        }
+        });
 
-        function updateLog(msg) {
-            const log = document.getElementById('log');
-            log.innerHTML += `<div>${msg}</div>`;
-            log.scrollTop = log.scrollHeight;
+        const pred = document.getElementById('prediction');
+        if (fb > os) { pred.innerText = "🔥 FASTBALL"; pred.style.color = "#ff4757"; }
+        else if (os > fb) { pred.innerText = "🍃 OFFSPEED"; pred.style.color = "#2ed573"; }
+        else { pred.innerText = "MIXED DATA"; pred.style.color = "white"; }
+    }
+
+    function updateLog(msg) {
+        const log = document.getElementById('log');
+        log.innerHTML = `<div>${msg}</div>` + log.innerHTML;
+    }
+
+    function clearData() {
+        if(confirm("Clear all learned patterns?")) {
+            brain = [];
+            currentSequence = [];
+            document.getElementById('log').innerHTML = "--- Data Log ---";
+            document.getElementById('prediction').innerText = "COLLECTING DATA";
         }
-    </script>
+    }
+</script>
 </body>
 </html>
